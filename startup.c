@@ -213,7 +213,9 @@ int main() {
       printf("Available notes:\n");
       for (size_t i = 0; i < filesCount; i++) {
         printf("%s\n", filesArray[i]);
-      } 
+      }
+      char *noteSelected = ncursesSelect(filesArray, "note", filesCount);
+      printf("Selected note: %s", noteSelected);
     } else if (vaultSelected == "Create a new vault") {
 
     } else if (vaultSelected == "Settings") {
