@@ -4,7 +4,7 @@
 ```shell
 git clone https://github.com/Totorile1/NvimNotes.git
 ```
-3. Compile the project
+3. Compile the project. If you are on NixOS and have direnv installed, run `direnv allow`. It will create the nix-shell which will get all the necessary libraries.
 ```
 cd NvimNotes
 make
