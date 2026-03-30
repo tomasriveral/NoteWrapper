@@ -1,3 +1,16 @@
+### How to install
+1. Have installed `neovim`, `ncurses`. `cjson` and `pkg-config`.
+2. Clone the repository.
+```shell
+git clone https://github.com/Totorile1/NvimNotes.git
+```
+3. Compile the project
+```
+cd NvimNotes
+make
+```
+4. run the binary `nvimnotes`
+
 ### The idea
 
 config file in json
