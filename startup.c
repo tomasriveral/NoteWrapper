@@ -5,6 +5,7 @@
 #include <cjson/cJSON.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/wait.h> // for waitpid
 #include <limits.h> // for PATH_MAX
 #include <ncurses.h>
 #include <unistd.h>
@@ -155,13 +156,25 @@ char* ncursesSelect(char **options, char *optionsType, size_t optionsNumber, int
 
 
 int openNvim(char *path, int debug) {
-  if (debug) {printf("\e[0;32m[DEBUG]\e[0m Opening with command:\nnvim +:NvimTreeOpen %s\n", path);}
-  execlp("nvim",
+  pid_t pid = fork(); // this forking allows the programs to return when nvim is closed
+  if (pid < 0) {
+    perror("\e[0;31mERROR: fork failed\e[0m\n");
+    return 1;
+  } else if (pid == 0) {
+    // Child process: replace with nvim
+    if (debug) {printf("\e[0;32m[DEBUG]\e[0m Opening with command:\nnvim +:NvimTreeOpen %s\n", path);}
+    execlp("nvim",
          "nvim", // we can specify each argument for nvim by passing more args to execlp
          path,
          NULL);
-  perror("\e[0;31mERROR: execlp failed. Nvim might be not installed or not in path.\e[0m\n");
-  return 1;
+    perror("\e[0;31mERROR: execlp failed. Nvim might be not installed or not in path.\e[0m\n");
+    exit(1);
+  } else {
+    // Parent process: wait for child to finish
+    int status;
+    waitpid(pid, &status, 0);
+  }
+  return 0;
 }
 
 
