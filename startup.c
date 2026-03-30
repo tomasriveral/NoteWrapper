@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
       char *vaultSelected = ncursesSelect(vaultsArray, "vault", vaultsCount + extraOptions, debug);
       if (debug) {printf("\e[0;32m[DEBUG]\e[0m Selected vault:%s\n", vaultSelected);}
       
-      if (vaultSelected != "Create a new vault" && vaultSelected != "Settings" && vaultSelected != "Quit (Ctrl+C)") {
+      if (strcmp(vaultSelected,"Create a new vault") != 0 && strcmp(vaultSelected,"Settings") != 0 && strcmp(vaultSelected,"Quit (Ctrl+C)") != 0) {
         int shouldChangeVault = 0;
         while (!shouldExit && !shouldChangeVault) {
           // this loop is the note selector
@@ -280,25 +280,25 @@ int main(int argc, char *argv[]) {
           char *noteSelected = ncursesSelect(filesArray, "note", filesCount + extraNotesOptions, debug);
           if (debug) {printf("\e[0;32m[DEBUG]\e[0m Selected note: %s\n", noteSelected);}
           
-          if (noteSelected != "Create new note" && noteSelected != "Back to vault selection" && noteSelected != "Quit (Ctrl+C)") {
+          if (strcmp(noteSelected, "Create new note") != 0 && strcmp(noteSelected,"Back to vault selection") != 0 && strcmp(noteSelected,"Quit (Ctrl+C)") != 0) {
             char fullPath[PATH_MAX];
             sprintf(fullPath, "%s/%s/%s", notesDirectoryString, vaultSelected, noteSelected);
             openNvim(fullPath, debug);
-          } else if (noteSelected == "Create new note") {
+          } else if (strcmp(noteSelected,"Create new note") == 0) {
 
-          } else if (noteSelected == "Back to vault selection") {
+          } else if (strcmp(noteSelected,"Back to vault selection") == 0) {
             shouldChangeVault = 1;
-          } else if (noteSelected == "Quit (Ctrl+C)") {
+          } else if (strcmp(noteSelected,"Quit (Ctrl+C)") == 0) {
             if (debug) {printf("\e[0;32m[DEBUG]\e[0m The program was exited,\n");}
             shouldExit = 1;
           }
         }
 
-      } else if (vaultSelected == "Create a new vault") {
+      } else if (strcmp(vaultSelected,"Create a new vault") == 0) {
 
-      } else if (vaultSelected == "Settings") {
+      } else if (strcmp(vaultSelected,"Settings") == 0) {
         //(TODO LATER) add a way to change the config.json from the app or at least show all the options
-      } else if (vaultSelected == "Quit (Ctrl+C)") {
+      } else if (strcmp(vaultSelected,"Quit (Ctrl+C)") == 0) {
         if (debug) {printf("\e[0;32m[DEBUG]\e[0m The program was exited.\n");}
         shouldExit = 1;
       }

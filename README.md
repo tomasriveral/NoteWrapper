@@ -2,7 +2,7 @@
 
 config file in json
 
-requierements neovim, nvim-tree, vivify, vivify.vim
+requierements neovim vivify, vivify.vim, ncurses, cjson, pkg-config,
 
 1. launches a TUI
 - asks if you want to open an already existing directory (by default in ~/Documents/Notes but can be changed in the config file) or create a new directory
