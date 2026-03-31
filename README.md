@@ -1,3 +1,10 @@
+### Why?
+I started journaling and notetaking with **[Obsidian](https://obsidian.md/)**, but wanted to only use free software. I also tried **[Logseq](https://logseq.com/)** and **[Joplin](https://github.com/laurent22/joplin)**, but preferred a terminal-based app. 
+
+Using my Neovim setup, I explored plugins like **[neorg](https://github.com/nvim-neorg/neorg)**, **[orgmode](https://github.com/nvim-orgmode)**, and **[today.nvim](https://github.com/VVoruganti/today.nvim)**. While they offered useful features, none fully met my needs: some lacked external Markdown rendering, some used custom file formats, and some didn’t provide a true journal mode. For real-time Markdown rendering from Neovim, I found **[Vivify](https://github.com/jannis-baum/Vivify/)**, which NvimNotes relies on.
+
+The goal was a terminal-based interface for accessing vaults and notes using standard Markdown, with minimal extra features. Although it currently works only with Neovim, it is designed as a standalone wrapper that could be adapted for other editors with minimal changes.
+
 ### How to install
 1. Have installed `neovim`, `ncurses`. `cjson` and `pkg-config`.
 2. Clone the repository.
@@ -11,38 +18,21 @@ make
 ```
 4. run the binary `nvimnotes`
 
-### The idea
-
-config file in json
-
-requierements neovim vivify, vivify.vim, ncurses, cjson, pkg-config,
-
-1. launches a TUI
-- asks if you want to open an already existing directory (by default in ~/Documents/Notes but can be changed in the config file) or create a new directory
-(this would work like Obsidian's vaults)
-when it creates a new directory creates a Welcome.md explaining
-
-2. launches nvim inside this dir with nvim +:NvimTreeOpen + way to open the Welcome.md (or by default first file?)
-3. launches the viewer with vivify
-some way to specify the browser
-
-
-
-things to do:
-1. port vivify.vim to nixos (got problems see `https://discourse.nixos.org/t/help-with-adding-a-vim-plugin-in-nixpkgs/76682`)
-2. i'm gonna work on the TUI for now.
-
-
-
-a option to make a file a journal. --> the code will append the file with ### and the date. and when nvim opens the file it will go to the end
-
-a way inside the json to modifiy the welcome.md
-per vault config inside the json file
-a tui configurator that writes to the json
-an option or save in another part for backups (like periodically just put the directory you want to save in config)
-
-a lot of options. via the config.json or via flags.
-a option/flag to not render.
-
-
-later to port it to Nix
+### What needs to be done (a lot)
+- [ ] Add a way to create vaults
+- [ ] Stylisize a bit the TUI
+- [ ] Add more options to the config file
+- [ ] Search for config.json in other directories such as ~/.config/nvimnotes/ and not only this directory
+- [x] Port vivify.vim to nixpkgs
+- [ ] Add a way to have vaults in different directories
+- [ ] Actually open vivify when opening nvim
+- [ ] Write the journaling code
+- [ ] Automatic backups
+- [ ] Add flags for customization
+- [ ] Write a good README.md
+- [ ] Option to not render and to only open nvim
+- [ ] Figure out this vivify issue https://github.com/jannis-baum/Vivify/issues/291
+- [ ] Maybe port this to other editors (and if so change the name of the project)
+- [ ] Fixe all the small stuff marked //(TODO LATER) in the code
+- [ ] Maybe add support for Jupyter Notebook (as vivify supports it)?
+- [ ] Add a way to delete notes
