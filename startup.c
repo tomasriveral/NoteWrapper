@@ -1,4 +1,3 @@
-//gcc startup.c $(pkg-config --cflags --libs libcjson ncurses)
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,13 +8,67 @@
 #include <limits.h> // for PATH_MAX
 #include <ncurses.h>
 #include <unistd.h>
+#include <ctype.h>
 
+// small helper functions here. Big ones are after
 int compareString(const void *a, const void *b) { // this will be the function used by qsort
     const char *str1 = *(const char **)a;
     const char *str2 = *(const char **)b;
     return strcmp(str1, str2); // strcmp returns <0, 0, >0
 }
 
+
+void sanitize(char *string) {
+  for (int i = 0; i < strlen(string); i++) {
+    if ((!isalnum((unsigned char)string[i]) && strchr("/\\:*?\"\'<>\n\r\t", string[i])) || ((i == 0 || i == 1) && string[i] == '.')) { // replace unwanted chars by '_'. '.' is replaced if it is only the first two chars
+                                                                                                                    // (TODO LATER fixe case where it "*.*", "..." and so on
+        string[i] = '_';
+    }
+  }
+}
+
+// big critical functions here. Small ones are before
+char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int debug) {
+  // input from user for the name
+  char fileName[256];
+  initscr();
+  echo();
+  keypad(stdscr, FALSE);
+  clear();
+  printw("Enter the name of the note: ");
+  mvprintw(3, 0, "Unsafe charachters such as \\, /, and . will be replaced by _."); // (TODO LATER) add more info
+  move(1,1);
+  wgetnstr(stdscr, fileName, sizeof(fileName)-4); //limits the buffer to prevent overflow (-4 to account indexing and from ".md" in case we need to add it later)
+  refresh();
+  endwin();
+  // (TODO LATER) add a way to go back to note selection
+  if (strcmp(fileName, "") == 0) {
+    printf("\e[0;32mERROR: fileName is empty\e[0m\n");
+    exit(1);
+  }
+  // check/sanitize the input
+  if (debug) {printf("\e[0;32m[DEBUG]\e[0m inputed fileName=%s\n", fileName);}
+  sanitize(fileName);
+  // if there is no .md add an .md
+  int len = strlen(fileName);
+  if (fileName[len-1] != 'd' || fileName[len-2] != 'm' || fileName[len-3] != '.') { // there might be a cleaner way to do this
+    strcat(fileName, ".md"); // this should not cause an overflow issue as we get at most 252 chars (+'.'+'m'+'d'+'\0' makes it to 256) with wgetnstr
+  }
+  if (debug) {printf("\e[0;32m[DEBUG]\e[0m sanitize(fileName)=%s\n", fileName);} // (TODO LATER) Check if dirToVault+vaultFromDir+fileName > PATH_MAX
+
+  char *fileFullPath = malloc(PATH_MAX); // this dinamically allocated because we use it in the main function to call openNvim
+  sprintf(fileFullPath, "%s/%s/%s", dirToVault, vaultFromDir, fileName);
+  FILE *filePointer;
+  filePointer = fopen(fileFullPath, "w"); // creates and opens the file
+  if (filePointer == NULL) {
+    printf("\e[0;31mERROR: The file couldn't be created. Something went wrong.\e[0m\n");
+    free(fileFullPath);
+    exit(1);
+  }
+  fprintf(filePointer, "### %s\n", fileName); //(TODO LATER) Add a way to configure default behaviour when creating a file
+  fclose(filePointer); // closes the file so that nvim could open it
+  return fileFullPath;
+}
 
 char** getVaultsFromDirectory(char *dirString, size_t *count, int debug) { 
     // (TODO LATER) it might be a good idea to check if these directories exist
@@ -285,7 +338,9 @@ int main(int argc, char *argv[]) {
             sprintf(fullPath, "%s/%s/%s", notesDirectoryString, vaultSelected, noteSelected);
             openNvim(fullPath, debug);
           } else if (strcmp(noteSelected,"Create new note") == 0) {
-
+            char *pathToOpen = createNewNote(notesDirectoryString, vaultSelected, debug);
+            openNvim(pathToOpen, debug);
+            free(pathToOpen);
           } else if (strcmp(noteSelected,"Back to vault selection") == 0) {
             shouldChangeVault = 1;
           } else if (strcmp(noteSelected,"Quit (Ctrl+C)") == 0) {
