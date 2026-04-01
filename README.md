@@ -1,7 +1,7 @@
 ### Why?
 I started journaling and notetaking with **[Obsidian](https://obsidian.md/)**, but wanted to only use free software. I also tried **[Logseq](https://logseq.com/)** and **[Joplin](https://github.com/laurent22/joplin)**, but preferred a terminal-based app. 
 
-Using my Neovim setup, I explored plugins like **[neorg](https://github.com/nvim-neorg/neorg)**, **[orgmode](https://github.com/nvim-orgmode)**, and **[today.nvim](https://github.com/VVoruganti/today.nvim)**. While they offered useful features, none fully met my needs: some lacked external Markdown rendering, some used custom file formats, and some didn’t provide a true journal mode. For real-time Markdown rendering from Neovim, I found **[Vivify](https://github.com/jannis-baum/Vivify/)**, which NvimNotes relies on.
+Using my Neovim setup, I explored plugins like **[neorg](https://github.com/nvim-neorg/neorg)**, **[orgmode](https://github.com/nvim-orgmode)**, and **[today.nvim](https://github.com/VVoruganti/today.nvim)**. While they offered useful features, none fully met my needs: some lacked external Markdown rendering, some used custom file formats, and some didn’t provide a true journal mode. For real-time Markdown rendering from Neovim, I found **[Vivify](https://github.com/jannis-baum/Vivify/)**, which NoteWrapper relies on.
 
 The goal was a terminal-based interface for accessing vaults and notes using standard Markdown, with minimal extra features. Although it currently works only with Neovim, it is designed as a standalone wrapper that could be adapted for other editors with minimal changes.
 
@@ -9,20 +9,20 @@ The goal was a terminal-based interface for accessing vaults and notes using sta
 1. Have installed `neovim`, `ncurses`. `cjson` and `pkg-config`.
 2. Clone the repository.
 ```shell
-git clone https://github.com/Totorile1/NvimNotes.git
+git clone https://github.com/Totorile1/NoteWrapper.git
 ```
 3. Compile the project. If you are on NixOS and have direnv installed, run `direnv allow`. It will create the nix-shell which will get all the necessary libraries.
 ```
-cd NvimNotes
+cd NoteWrapper
 make
 ```
-4. run the binary `nvimnotes`
+4. run the binary `notewrapper`
 
 ### What needs to be done (a lot)
 - [ ] Add a way to create vaults
 - [ ] Stylisize a bit the TUI
 - [ ] Add more options to the config file
-- [ ] Search for config.json in other directories such as ~/.config/nvimnotes/ and not only this directory
+- [ ] Search for config.json in other directories such as ~/.config/notewrapper/ and not only this directory
 - [x] Port vivify.vim to nixpkgs
 - [ ] Add a way to have vaults in different directories
 - [ ] Actually open vivify when opening nvim

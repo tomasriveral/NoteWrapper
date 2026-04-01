@@ -1,6 +1,6 @@
 CC = gcc
 SRC = startup.c
-TARGET = nvimnotes
+TARGET = notewrapper
 CFLAGS = -Wall -O2 `pkg-config --cflags libcjson ncurses`
 LDFLAGS = `pkg-config --libs libcjson ncurses`
 DEBUG ?= 0
