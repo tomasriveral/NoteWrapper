@@ -26,13 +26,12 @@ make
 - [x] Port vivify.vim to nixpkgs
 - [ ] Add a way to have vaults in different directories
 - [ ] Actually open vivify when opening nvim
-- [ ] Write the journaling code
+- [ ] Write the journaling code (separate files or one big journal files)
 - [ ] Automatic backups
 - [ ] Add flags for customization
 - [ ] Write a good README.md
 - [ ] Option to not render and to only open nvim
 - [ ] Figure out this vivify issue https://github.com/jannis-baum/Vivify/issues/291
-- [ ] Maybe port this to other editors (and if so change the name of the project)
+- [ ] Maybe port this to other editors
 - [ ] Fixe all the small stuff marked //(TODO LATER) in the code
-- [ ] Maybe add support for Jupyter Notebook (as vivify supports it)?
 - [ ] Add a way to delete notes
