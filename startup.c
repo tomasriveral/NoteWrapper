@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <ftw.h> // used for deleting dirs
 #include <pwd.h> // for getting home directory
-
+#define HASH_MACRO "0ea1d20bcdd52c46c086d3dba125b9b83ad8cbea2e026d5646775f48bae8f867" // if the user inputs this hash. The program brokes. It was the best way i found to see if some values were unchanged
 // small helper functions here. Big ones are after
 int compareString(const void *a, const void *b) { // this will be the function used by qsort
     const char *str1 = *(const char **)a;
@@ -19,6 +19,14 @@ int compareString(const void *a, const void *b) { // this will be the function u
     return strcmp(str1, str2); // strcmp returns <0, 0, >0
 }
 
+int isStringInArray(char *string, char **array, int len) {
+  for (int i = 0; i < len; i++) {
+    if (strcmp(string, array[i]) == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
 
 void sanitize(char *string) {
   for (int i = 0; i < strlen(string); i++) {
@@ -48,20 +56,25 @@ int rmrf(char *path) {
 }
 
 // big critical functions here. Small ones are before
-char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int debug) {
+char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, char *bypass, int debug) {
   // (TODO LATER) Add check. If the user creates a note with a name that already exists. it erases the old one
   // input from user for the name
   char fileName[256];
-  initscr();
-  echo();
-  keypad(stdscr, FALSE);
-  clear();
-  printw("Enter the name of the new note: ");
-  mvprintw(3, 0, "Unsafe characters such as \\, and / will be replaced by _"); // (TODO LATER) add more info
-  move(1,1);
-  wgetnstr(stdscr, fileName, sizeof(fileName)-4); //limits the buffer to prevent overflow (-4 to account indexing and from ".md" in case we need to add it later)
-  refresh();
-  endwin();
+  if (strcmp(bypass, HASH_MACRO) == 0) {
+    initscr();
+    echo();
+    keypad(stdscr, FALSE);
+    clear();
+    printw("Enter the name of the new note: ");
+    mvprintw(3, 0, "Unsafe characters such as \\, and / will be replaced by _"); // (TODO LATER) add more info
+    move(1,1);
+    wgetnstr(stdscr, fileName, sizeof(fileName)-4); //limits the buffer to prevent overflow (-4 to account indexing and from ".md" in case we need to add it later)
+    refresh();
+    endwin();
+  } else { // bypasses user input if we bypass is different than HASH_MACRO
+    strncpy(fileName, bypass, sizeof(fileName)-1); // (TODO LATER) Maybe add a warning if string is too big. It gets truncated
+    fileName[sizeof(fileName)-1] = '\0';
+  }
   // (TODO LATER) add a way to go back to note selection
   if (strcmp(fileName, "") == 0) {
     printf("\e[0;32mERROR: fileName is empty\e[0m\n"); // (TODO LATER) it should just go back to the note creation with a warning
@@ -333,10 +346,9 @@ int openNvim(char *path, int debug) {
 int main(int argc, char *argv[]) {
 
     int debug = 0;
+    // all of the argument parsing is done after so flags overwrite config options. The only config options that can't be set in the config is the debug
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-V") == 0) {
-            debug = 0;
-        } else if (strcmp(argv[i], "-v") == 0) {
+        if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--verbose") == 0) {
             debug = 1;
         }
     }
@@ -395,14 +407,15 @@ int main(int argc, char *argv[]) {
       free(data);
       exit(1);
     }
+    // (TODO LATER) maybe add a default vault option
     cJSON *dirJson = cJSON_GetObjectItem(json, "directory");
     char *notesDirectoryString = malloc(PATH_MAX);
     if (dirJson && cJSON_IsString(dirJson) && dirJson->valuestring != NULL) {
-      const char *rawPath = dirJson->valuestring;
+      char *rawPath = dirJson->valuestring;
       if (rawPath[0] == '$') { // expands $ in the path
         snprintf(notesDirectoryString, PATH_MAX, "%s/%s", homedir, rawPath+1);
       } else {
-        notesDirectoryString = strdup(rawPath);
+        notesDirectoryString = rawPath;
       }
     } else {
       // default vault path if it is not set in the config
@@ -413,6 +426,44 @@ int main(int argc, char *argv[]) {
     free(data);
     //---------------------------------------------------------------------------------------------
     //---------------------------------------------------------------------------------------------
+    
+    // flags and arguments overwrite the config
+    // (TODO LATER) maybe add a way to combine flags (such which rm -fr?)
+    // (TODO LATER) add a version flag
+    char *bypassVaultSelection = HASH_MACRO; // (TODO LATER) find a better idea. If later it detects other string than that 256 string. It will bypass the selection
+    char *bypassNoteSelection = HASH_MACRO;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+          printf("Usage: notewrapper [options]\n");
+          printf("Options:\n");
+          printf("  -d, --directory <path/to/directory>         Specify the vaults' directory.\n");
+          printf("  -h, --help                                  Display this message.\n");
+          printf("  -n, --note  <note's name>                   Specify the note.");
+          printf("  -v, --vault <vault's name>                  Specify the vault.\n");
+          printf("  --version                                   Display the program version.\n");
+          printf("  -V, --verbose                               Show debug information.\n");
+          return 1;
+        } else if (strcmp(argv[i], "--version") == 0) {
+          printf("There is still no released version\n");
+          return 0;
+        } else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--directory") == 0) {
+          notesDirectoryString = argv[i+1];
+          // (TODO LATER) Add a check if there is a arg after, if it is a directory, expand $, work with . and .., check if there is a dir.
+          // it works with .. and . if the dir exists
+          // (TODO LATER) Add debug info for this flag and others
+        } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--vault") == 0) {
+          bypassVaultSelection = argv[i+1]; // (TODO LATER) Add security checks pass ti strndup. and if vault don't exist create one. SEE (TODO LATER) where bypassVaultSelection is checked
+        } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--note") == 0) { // (TODO LATER) Broken if we put the -v flag after the -n flag
+          if (strcmp(bypassVaultSelection, HASH_MACRO) == 0) {
+            printf("\e[0;31mERROR: If you want to specify the note, you must also specify the vault with -v\e[0m\n");
+            exit(1);
+          } else {
+            bypassNoteSelection = argv[i+1];
+          }
+
+        }
+    }
+
     int shouldExit = 0;
     while(!shouldExit) {
       // this loop is the vault selector
@@ -435,10 +486,28 @@ int main(int argc, char *argv[]) {
       vaultsArray[vaultsCount+1] = "Settings";
       vaultsArray[vaultsCount+2] = "Quit (Ctrl+C)";
       // select a vault
-      char *vaultSelected = ncursesSelect(vaultsArray, "Select vault (Use arrows or WASD, Enter to select):", vaultsCount, extraOptions, debug);
+      char *vaultSelected = NULL;
+
+      if (strcmp(bypassVaultSelection, HASH_MACRO) != 0) {
+        // bypasses the vault selection if the flag is -v (TODO LATER) use isStringInArray() to check if the vault really exists  
+        vaultSelected = bypassVaultSelection;
+          goto note_selection;
+      }
+      vaultSelected = ncursesSelect(vaultsArray, "Select vault (Use arrows or WASD, Enter to select):", vaultsCount, extraOptions, debug);
+      
+      // now that we won't use vaultsArray in this iteration of the loop, we should free it and all its elements. (As this is memory in the heap and not the stack and thus is our responsability to manage)
+      for (int i = 0; i < vaultsCount; i++) {
+        if (vaultSelected != vaultsArray[i]) { // i forgot this condition before. and freed the pointer equal to vaultSelected... So don't remove this condition
+          free(vaultsArray[i]); // we must only free the vaults options and not the extraOptions to avoid segfault
+        }
+      }
+      free(vaultsArray);
+
       if (debug) {printf("\e[0;32m[DEBUG]\e[0m Selected vault:%s\n", vaultSelected);}
       
       if (strcmp(vaultSelected,"Create a new vault") != 0 && strcmp(vaultSelected,"Settings") != 0 && strcmp(vaultSelected,"Quit (Ctrl+C)") != 0) {
+note_selection:
+        bypassVaultSelection = HASH_MACRO; // we must reset bypassVaultSelection to not get stuck in a infinite loop of bypassing
         int shouldChangeVault = 0;
         while (!shouldExit && !shouldChangeVault) {
           // this loop is the note selector
@@ -460,17 +529,38 @@ int main(int argc, char *argv[]) {
           filesArray[filesCount+1] = "Back to vault selection";
           filesArray[filesCount+2] = "Delete vault";
           filesArray[filesCount+3] = "Quit (Ctrl+C)";
-          char *noteSelected = ncursesSelect(filesArray, "Select note (Use arrows or WASD, Enter to select):", filesCount, extraNotesOptions, debug);
+          char *noteSelected;
+          if (strcmp(bypassNoteSelection, HASH_MACRO) != 0) {
+            // (TODO LATER) Add debug info
+            noteSelected = bypassNoteSelection;
+            if (isStringInArray(noteSelected, filesArray, filesCount + extraNotesOptions)) {// (TODO LATER) Handle the case where the note name is one of the extraOptions
+              goto open_note;
+            } else { // if the specified note doesn't exist. We creat it
+              goto note_creation;
+            }
+          }
+          noteSelected = ncursesSelect(filesArray, "Select note (Use arrows or WASD, Enter to select):", filesCount, extraNotesOptions, debug);
+          // now that we won't use filesArray in this iteration of the loop, we should free it and all its elements. (As this is memory in the heap and not the stack and thus is our responsability to manage)
+          for (int i = 0; i < filesCount; i++) {
+            if (noteSelected != filesArray[i]) { // we must prevent noteSelected to be freed. It will cause a lot of problems
+              free(filesArray[i]); // we must only free the files options and not the extraOptions to avoid segfault
+            }
+          }
+          free(filesArray);
           if (debug) {printf("\e[0;32m[DEBUG]\e[0m Selected note: %s\n", noteSelected);}
           
           if (strcmp(noteSelected, "Create new note") != 0 && strcmp(noteSelected,"Back to vault selection") != 0 && strcmp(noteSelected, "Delete vault") != 0 && strcmp(noteSelected,"Quit (Ctrl+C)") != 0) {
-            char fullPath[PATH_MAX];
+open_note:
+            bypassNoteSelection =  HASH_MACRO; // we must reset bypassNoteSelection to avoid getting into an infinite loop of bypassing the note selection
+            char fullPath[PATH_MAX]; // (TODO LATER) Find a more appropriate and descriptive name for the variable
             sprintf(fullPath, "%s/%s/%s", notesDirectoryString, vaultSelected, noteSelected); // (TODO LATER) change all sprintf to snprintf which checks for buffer size
             openNvim(fullPath, debug);
           } else if (strcmp(noteSelected,"Create new note") == 0) {
-            char *pathToOpen = createNewNote(notesDirectoryString, vaultSelected, debug);
-            openNvim(pathToOpen, debug);
-            free(pathToOpen);
+note_creation:
+            char *pathForNoteCreation = createNewNote(notesDirectoryString, vaultSelected, bypassNoteSelection, debug);
+            bypassNoteSelection =  HASH_MACRO; // we must reset bypassNoteSelection to avoid getting into an infinite loop of bypassing the note selection
+            openNvim(pathForNoteCreation, debug);
+            //free(pathForNoteCreation);
           } else if (strcmp(noteSelected,"Back to vault selection") == 0) {
             shouldChangeVault = 1;
           } else if (strcmp(noteSelected, "Delete vault") == 0) {
