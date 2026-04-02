@@ -6,18 +6,19 @@ Using my Neovim setup, I explored plugins like **[neorg](https://github.com/nvim
 The goal was a terminal-based interface for accessing vaults and notes using standard Markdown, with minimal extra features. Although it currently works only with Neovim, it is designed as a standalone wrapper that could be adapted for other editors with minimal changes.
 
 ### How to install
-1. Have installed `neovim`, `ncurses`. `cjson` and `pkg-config`.
-2. Clone the repository.
+1. Have installed `ncurses`, `cjson` and `pkg-config`.
+2. Have a supported editor: `vim` and `neovim` (for the moment)
+3. Clone the repository.
 ```shell
 git clone https://github.com/Totorile1/NoteWrapper.git
 ```
-3. Compile the project. If you are on NixOS and have direnv installed, run `direnv allow`. It will create the nix-shell which will get all the necessary libraries.
+4. Compile the project. If you are on NixOS and have direnv installed, run `direnv allow`. It will create the nix-shell which will get all the necessary libraries.
 ```
 cd NoteWrapper
 make
 ```
-4. configure `./config.json`
-5. run the binary `notewrapper`
+5. configure `./config.json`
+6. run the binary `notewrapper`
 
 ### Usage
 If you want to render with Vivify with the flags `-r`, `--render` or with the option in the config file, you must have installed the plugins for your specific editor ([for Vim and Neovim](https://github.com/jannis-baum/vivify.vim))
@@ -42,6 +43,6 @@ Change `$/.config/notewrapper/config.json`. If it does not exist. On building, i
 - [x] Option to not render and to only open nvim
 - [ ] Figure out this vivify issue https://github.com/jannis-baum/Vivify/issues/291
 - [ ] Maybe port this to other editors
-- [ ] Port to vim
+- [x] Port to vim
 - [ ] Fixe all the small stuff marked //(TODO LATER) in the code
 - [ ] Add a way to delete notes
