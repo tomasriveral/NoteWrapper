@@ -316,13 +316,14 @@ char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, siz
 
 
 int openEditor(char *path, char *editor, int render, int endOfFile, int debug) {
+  //(TODO LATER) for nvim and vim we should check if there is swap files or recovery files and handle that
   pid_t pid = fork(); // this forking allows the programs to return when nvim is closed
   if (pid < 0) {
     perror("\e[0;31mERROR: fork failed\e[0m\n");
     return 1;
   } else if (pid == 0) {
       // Child process: replace with editor of choice
-    if (strcmp(editor, "neovim") == 0) { 
+    if (strcmp(editor, "neovim") == 0) { // opens with Neovim 
     //(TODO LATER) we should (with a config option) append a new line every time it opens
       if (render) { // don't render using vivify
         if (endOfFile) { // goes to the end of the file on opening. (TODO LATER) find a better way to do this loops. Maybe an array of args and if () we add the arg to the array and we pass the whole array to execlp
@@ -349,12 +350,39 @@ int openEditor(char *path, char *editor, int render, int endOfFile, int debug) {
             exit(1);
         }
       }
+    } else if (strcmp(editor, "vim") == 0) { // opens with Vim // see comments for neovim for explanations
+    //(TODO LATER) we should (with a config option) append a new line every time it opens
+      if (render) {
+        if (endOfFile) {
+          if (debug) {printf("\e[0;32m[DEBUG]\e[0m Opening with command:\nvim +:$ +:Vivify %s\n", path);}
+            execlp("vim", "vim", "+:$", "+:Vivify", path, NULL);
+            perror("\e[0;31mERROR: execlp failed. Vim might be not installed or not in path.\e[0m\n");
+            exit(1);
+        } else {
+          if (debug) {printf("\e[0;32m[DEBUG]\e[0m Opening with command:\nvim +:Vivify %s\n", path);}
+            execlp("vim", "vim", "+:Vivify", path, NULL);
+            perror("\e[0;31mERROR: execlp failed. Vim might be not installed or not in path.\e[0m\n");
+            exit(1);
+        }
+      } else {
+        if (endOfFile) {
+          if (debug) {printf("\e[0;32m[DEBUG]\e[0m Opening with command:\nvim +:$ %s\n", path);}
+            execlp("vim", "vim", "+:$", path, NULL);
+            perror("\e[0;31mERROR: execlp failed. Vim might be not installed or not in path.\e[0m\n"); // (TODO LATER) We should verify at the start when the editor is choosen if it exists
+            exit(1);
+        } else {
+          if (debug) {printf("\e[0;32m[DEBUG]\e[0m Opening with command:\nvim %s\n", path);}
+            execlp("vim", "vim", path, NULL);
+            perror("\e[0;31mERROR: execlp failed. Vim might be not installed or not in path.\e[0m\n"); // (TODO LATER) We should verify at the start when the editor is choosen if it exists
+            exit(1);
+        }
+      }
     }
   } else {
     // Parent process: wait for child to finish
     int status;
     waitpid(pid, &status, 0);
-  }
+  } // (TODO LATER) add a options to kill the browser when closing. This will solve the bug where -R does renders when the file was previously opened with -r.
   return 0;
 }
 
