@@ -87,7 +87,7 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, char *bypass,
   return fileFullPath;
 }
 
-char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, size_t extraOptionsNumber, int shouldDebug) {
+char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, size_t extraOptionsNumber, char *bottomText, char *middleText, char *topText, int shouldDebug) {
     int highlight = 0; //curently highlighted option
     int key;
 
@@ -104,29 +104,41 @@ char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, siz
       clear();
       attron(COLOR_PAIR(1));
       mvprintw(0,0, "Select %s (Use arrows or WASD, Enter to select):", optionsText);
+      int offset = 1;
+      if (strcmp(bottomText, "") != 0) {
+        mvprintw(offset, 1, "%s", bottomText);
+        offset++;
+      }
       // Print options with highlighting
       for (int i = 0; i < optionsNumber; i++) {
         if (i == highlight) {
           attron(A_REVERSE);
         }   // highlight selected
-        mvprintw(i+2, 2, "%s", options[i]);
+        mvprintw(i+offset, 2, "%s", options[i]);
         if (i == highlight) {
           attroff(A_REVERSE);
         }
       }
       attroff(COLOR_PAIR(1));
+      if (strcmp(middleText, "") != 0) {
+        mvprintw(offset+optionsNumber, 1, "%s", middleText);
+        offset++;
+      }
       // Printf extraOptions with highlighting
       attron(COLOR_PAIR(2));
       for (int k = optionsNumber; k < optionsNumber + extraOptionsNumber; k++) {
         if (k == highlight) {
           attron(A_REVERSE);
         }
-        mvprintw(k+2, 2, "%s", options[k]);
+        mvprintw(k+offset, 2, "%s", options[k]);
         if (k == highlight) {
           attroff(A_REVERSE);
         }
       }
       attroff(COLOR_PAIR(2));
+      attron(COLOR_PAIR(1));
+      mvprintw(offset+optionsNumber+extraOptionsNumber, 1, "%s", topText);
+      attroff(COLOR_PAIR(1));
       key = getch(); //get some int which value correspond to some key being pressed
 
       switch(key) {

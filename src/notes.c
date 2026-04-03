@@ -135,7 +135,10 @@ char *updateJournal(char *path, char *journal, char *timeFormat, int shouldDebug
 
   char *date = getFormatedTime(timeFormat, shouldDebug);
   debug("Formated time for the journal's entry is %s", date);
-
+  char dateWithExtension[PATH_MAX];
+  snprintf(dateWithExtension, PATH_MAX, "%s.md", date);
+  sanitize(dateWithExtension);
+  debug("Sanitized date: %s\n(it might be used later for a file name if the journal is divided)", dateWithExtension);
   struct stat metadata;
   error(stat(path, &metadata), "program", "stat() failed to get information about %s", path);
   if (S_ISREG(metadata.st_mode)) {
@@ -144,10 +147,73 @@ char *updateJournal(char *path, char *journal, char *timeFormat, int shouldDebug
       appendToFile(path, date, shouldDebug);
     } // if there is an entry do nothing 
   } else if (S_ISDIR(metadata.st_mode)) {
-    debug("%s is a divided journal.", path);
-  
+      debug("%s is a divided journal.", path);
+      struct dirent *dividedJournalEntry;
+      // snprintf does not like to have the same variable as input and output so we use a buffer
+      char temp[PATH_MAX];
+      snprintf(temp, PATH_MAX, "%s/", path); // appends a /. For safety
+      strncpy(path, temp, PATH_MAX);
+      DIR *dividedJournalDirectory = opendir(path);
+      error(dividedJournalDirectory==NULL, "program", "Could not open directory %s", path);
+      char **entryArray = NULL; // will contain all the entries of the divided journal
+      // This time it will be different. We must add "invert" the extraOptions to the options so that the Create new entry in journal is on top
+      entryArray = realloc(entryArray, sizeof(char*));
+      char *createEntryMessage = malloc(PATH_MAX);
+      snprintf(createEntryMessage, PATH_MAX, "Create new entry for the journal %s", journal);
+      entryArray[0] = createEntryMessage;
+      size_t entryCount = 1; // we need to count how many dirs there is to always readjust how many memory we alloc
+      // Refer https://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
+      // for readdir()
+      debug("┌------------------------------\n Detected files and dirs from %s:", path);
+      // iterates over all the entries from the dir
+      while ((dividedJournalEntry = readdir(dividedJournalDirectory)) != NULL) {
+        // (TODO LATER) find a way to sort them
+        altDebug("%s\n", dividedJournalEntry->d_name);
+        if (dividedJournalEntry->d_name[0] != '.') { // if the entry don't start with a dot (so hidden dirs and hidden files)
+          char fullPathEntry[PATH_MAX]; // creates a string of size of the maximum path lenght
+          snprintf(fullPathEntry, sizeof(fullPathEntry), "%s/%s", path, dividedJournalEntry->d_name); // sets the full absolute path to fullPathEntry
+          
+          struct stat metadataPathEntry;
+          if (stat(fullPathEntry, &metadataPathEntry) == 0 && S_ISREG(metadataPathEntry.st_mode)) { // if this entry is a directory
+            entryArray = realloc(entryArray, (entryCount + 1)*sizeof(char*));
+            entryArray[entryCount] = strdup(dividedJournalEntry->d_name); // copy the dir name into entryArray
+            entryCount++;
+          }
+        }
+      }
+      altDebug("└------------------------------\n");
+      // free's some used memory
+      closedir(dividedJournalDirectory);
+      // we must now select to create new entry or to enter in old one
+      char *selectedOption = ncursesSelect(entryArray, "Create new entry or acces old entry:", 1, entryCount -1, " ", " ", "", shouldDebug); // the "Create new entry for the journal %s" will be the only options. All other will be extraOptions. This is made so that "Create [...] %s" will always be on top
+      debug("Selected option from journal entry selection: %s", selectedOption);
+      if (strcmp(selectedOption, createEntryMessage) == 0) { // create new entry
+        char temp[PATH_MAX];
+        error(strlen(path)+1+strlen(dateWithExtension)+1>PATH_MAX, "Error file path too long. %s/%s must not exceed PATH_MAX", path, dateWithExtension); 
+        snprintf(temp, PATH_MAX, "%s/%s", path, dateWithExtension);
+        strncpy(path, temp, PATH_MAX);
+        if (!isStringInArray(date, (const char **)entryArray, entryCount)) { // it only creates it if it doesn't already exist
+                                                              // if it does exist it will just pass the full path
+          
+          debug("Creating entry %s inside %s", date, path);
+          FILE *file;
+          file = fopen(path, "w");
+          error(file == NULL, "program", "%s couldn't be created", path);
+          debug("Writing %s\\n to %s", date, path);
+          fprintf(file, "%s\n", date);
+          fclose(file);
+        }
+      } else { // we just recreate the path to the selected entry
+        // snprintf does not like to have the same variable as input and output so we use a buffer
+        char temp[PATH_MAX];
+        snprintf(temp, PATH_MAX, "%s/%s", path, selectedOption);
+        strncpy(path, temp, PATH_MAX);
+        debug("Returning path to the selected entry: %s", path);
+      }
+      // (TODO LATER) free all unused entryArray[i]
   } else {
     error(1, "program", "%s is not a file and not a directory.", path);
   }
+  
   return path;
 }
