@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "utils.h"
+#include "notes.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,6 +111,7 @@ int main(int argc, char *argv[]) {
     // flags and arguments overwrite the config
     // (TODO LATER) maybe add a way to combine flags (such which rm -fr?)
     // (TODO LATER) add a version flag
+    // (TODO LATER) separate -n for journals from notes
     char *bypassVaultSelection = HASH_MACRO; // (TODO LATER) find a better idea. If later it detects other string than that 256 string. It will bypass the selection
     char *bypassNoteSelection = HASH_MACRO;
     for (int i = 1; i < argc; i++) {
@@ -244,7 +246,7 @@ note_selection:
               goto note_creation;
             }
           }
-          noteSelected = ncursesSelect(filesArray, "Select note (Use arrows or WASD, Enter to select):", filesCount, extraNotesOptions, shouldDebug);
+          noteSelected = ncursesSelect(filesArray, "Select note or journal (Use arrows or WASD, Enter to select):", filesCount, extraNotesOptions, shouldDebug);
           // now that we won't use filesArray in this iteration of the loop, we should free it and all its elements. (As this is memory in the heap and not the stack and thus is our responsability to manage)
           for (int i = 0; i < filesCount; i++) {
             if (noteSelected != filesArray[i]) { // we must prevent noteSelected to be freed. It will cause a lot of problems

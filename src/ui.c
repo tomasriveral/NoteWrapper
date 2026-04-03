@@ -47,6 +47,7 @@ input_screen:
 }
 
 char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, char *bypass, int shouldDebug) {
+  // (TODO LATER) Add code to create journal
   // (TODO LATER) Add check. If the user creates a note with a name that already exists. it erases the old one
   // input from user for the name
   char fileName[256];

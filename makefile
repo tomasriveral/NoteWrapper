@@ -14,7 +14,7 @@ endif
 
 # Sources and target
 SRC_DIR := src
-SRC := $(SRC_DIR)/main.c $(SRC_DIR)/ui.c $(SRC_DIR)/utils.c
+SRC := $(SRC_DIR)/main.c $(SRC_DIR)/ui.c $(SRC_DIR)/utils.c $(SRC_DIR)/notes.c
 TARGET := notewrapper
 
 # Phony targets
