@@ -30,39 +30,41 @@ extern const char *supportedEditor[]; // array of supported editors
 extern const int numEditors; // number of supported editors
 
 //(TODO LATER) organise this mess
-int compareString(const void *a, const void *b);
+
 //compares two strings alphabetically.
 //this function is used for qsort
-int doesEditorExist(char *editorToCheck, int debug);
-// this basically checks all the dirs from your path for the editor. This is a safety check
+int compareString(const void *a, const void *b);
+// this basically checks all the dirs from your path for the editor. This is a safety check.
 // If the executable from an editor is not the editor name (for example neovim and nvim), you must handle at the start of the function.
+int doesEditorExist(char *editorToCheck, int debug);
+// please use the macro debug instead of _debug.
+//formated debugging.
 void _debug(const int d, const char *file, const int line, const char *function, const char *message, ...);
-//formated debugging
+//use for less formal debuggin. (usefull if enumerating or making a list).
 void _altDebug(const int d, const char *message, ...);
-//use for less formal debuggin. (usefull if enumerating or making a list)
+// formated error.
 void _error(const int shouldDebug, const int condition, const char *type, const char *file, const int line, const char *function, const char *message, ...);
-// formated error
-// if the error is not a critical one (for ex: file not found) System error message will be Succesfull
+// Returns 1 if the string is in the array.
+// Returns 0 if the string is not in the array.
+// If you want to only check the first n elements of the array, pass n as len.
 int isStringInArray(const char *string, const char **array, const int len);
-// Returns 1 if the string is in the array
-// Returns 0 if the string is not in the array
-// If you want to only check the first n elements of the array, pass n as len
+// returns 1 if the string is in the file.
+// returns 0 if the string is not in the file.
 int isStringInFile(const char *path, const char *string, const int shouldDebug);
-// returns 1 if the string is in the file
-// returns 0 if the string is not in the file
 void appendToFile(const char *path, const char *string, const int shouldDebug);
+// replace unwanted chars by '_'.
+// '.' is replaced if it is only the first two chars
 void sanitize(char *string);
-// replace unwanted chars by '_'. '.' is replaced if it is only the first two chars
+//from https://stackoverflow.com/a/5467788.
+//deletes an entire directory. Use with parsimony and carefullness.
 int rmrf(char *path);
-//from https://stackoverflow.com/a/5467788
-//deletes an entire directory. Use with parsimony and carefullness
+// Inputs are the path to the file, the editor to open and some rendering option.
+// render: if we render the .md file with Vivify.
+// shouldJumpToEndOfFile: if we put the cursor at the end of the file when opening.
+// The program resumes when the editor is closed.
 int openEditor(char *path, char *editor, int render, int shouldJumpToEndOfFile, int debug);
-// Inputs are the path to the file, the editor to open and some rendering option
-// render: if we render the .md file with Vivify
-// shouldJumpToEndOfFile: if we put the cursor at the end of the file when opening
-// The program resumes when the editor is closed
+// see https://pubs.opengroup.org/onlinepubs/7908799/xsh/strftime.html? for formats.
+// returns a string (buffered at 256 chars).
+// you should not forgot to free this string as it is in the heap.
 char *getFormatedTime(char *format, int shouldDebug);
-// see https://pubs.opengroup.org/onlinepubs/7908799/xsh/strftime.html? for formats
-// returns a string (buffered at 256 chars)
-// you should not forgot to free this string as it is in the heap
 #endif

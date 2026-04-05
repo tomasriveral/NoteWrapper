@@ -14,7 +14,6 @@
 #include <ncurses.h>
 
 int main(int argc, char *argv[]) {
-
     int shouldDebug = 0;
     int overwriteConfigPath = 0; 
     // (TODO LATER) we really should change all the HASH_MACRO to an int that checks if it is overwritten and a char* that stores to the string
@@ -33,8 +32,7 @@ int main(int argc, char *argv[]) {
     const char *homedir = pw->pw_dir;
  
     //---------------------------------------------------------------------------------------------
-    //---------------------------------------------------------------------------------------------
-    
+    //---------------------------------------------------------------------------------------------    
     // this part handles the config.json file
     // gets the home directory
     char *configPath = malloc(PATH_MAX);
@@ -90,7 +88,7 @@ int main(int argc, char *argv[]) {
       snprintf(notesDirectoryString, PATH_MAX, "%s/Documents/Notes/", homedir);
       debug("the vault's directory is not set in the config file. Using default %s", notesDirectoryString);
     }
-  
+
     // fetch the render and jumpToEnfOfFileOnLaunch bools
     int shouldRender = 1;
     cJSON *shouldRenderJSON = cJSON_GetObjectItem(json, "render");
