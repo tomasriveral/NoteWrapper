@@ -6,44 +6,95 @@ Using my Neovim setup, I explored plugins like **[neorg](https://github.com/nvim
 The goal was a terminal-based interface for accessing vaults and notes using standard Markdown, with minimal extra features. Although it currently works only with Neovim, it is designed as a standalone wrapper that could be adapted for other editors with minimal changes.
 
 ### How to install
-1. Have installed `ncurses`, `cjson` and `pkg-config`.
+1. Have installed `ncurses`, `cjson`, `make`, `Vivify`, `rsync` and `pkg-config`. <TODO LATER we should put hyprlinks to each program.>
 2. Have a supported editor: `vim`, `neovim` and `nano` (for the moment)
 3. Clone the repository.
 ```shell
 git clone https://github.com/Totorile1/NoteWrapper.git
 ```
-4. Compile the project. If you are on NixOS and have direnv installed, run `direnv allow`. It will create the nix-shell which will get all the necessary libraries.
+4. Compile the project. If you are on NixOS and have direnv installed, run `direnv allow`. It will create the nix-shell which will get all the necessary build-time libraries.
 ```
 cd NoteWrapper
 make
 ```
-5. configure `./config.json`
+5. [configure](#configuration) `./config.json`
 6. run the binary `notewrapper`
 
 ### Usage
-If you want to render with Vivify with the flags `-r`, `--render` or with the option in the config file, you must have installed the plugins for your specific editor ([for Vim and Neovim](https://github.com/jannis-baum/vivify.vim))
-
-
+```
+Usage: notewrapper [options]
+Options:
+  -c, --config <path/to/config>               Specify the config file.
+  -d, --directory <path/to/directory>         Specify the vaults' directory.
+  -h, --help                                  Display this message.
+  -e, --editor                                Specify the editor to open.
+  -j, --jump                                  Jumps to the end of the file on opening.
+  -J, --no-jump                               Do not jump to the end of the file
+  -n, --note  <note's name>                   Specify the note (or journal).
+  -r, --render                                Renders the note with Vivify.
+  -R, --no-render                             Do not render.
+  -v, --vault <vault's name>                  Specify the vault.
+  --version                                   Display the program version and the GPL3 notice.
+  -V, --verbose                               Show debug information.
+```
 ### Editor support
 
 `NoteWrapper` relies on certain editor features, so not all of its functionality is supported by every editor.
-
 Here are the features that depend on editor support:
 
 - **Bufferless rendering**: As soon as you write something in the note (even without saving), it is rendered.
 - **Cursor following**: The rendered view follows your cursor. For example, if you move to the bottom of a note, the rendered view will also scroll to the bottom.
 - **Jump to end on open**: Automatically jumps to the end of the file when opening it.
 
-The first two features depend on [Vivify's plugin for editors](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#existing-integration).
+The first two features depend on [Vivify's plugin for editors](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#existing-integration) and are only usefull if you want to render the markdown externally on your browser. If your editor misses these features, you can just create a plugin or an extension which uses [Vivify's simple API](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#editor-support).
 
-| Editor  | Bufferless | Cursor | Jump to end |
-|---------|------------|--------|-------------|
-| Neovim  | ✅         | ✅     | ✅          |
-| Vim     | ✅         | ✅     | ✅          |
-| Nano    | ❌         | ❌     | ✅          |
+
+| Editor  | Bufferless | Cursor | Jump to end | Necessary plugin |
+|---------|------------|--------|-------------|------------------|
+| Neovim  | ✅         | ✅     | ✅          | [vivify-vim](https://github.com/jannis-baum/vivify.vim) |
+| Vim     | ✅         | ✅     | ✅          | [vivify-vim](https://github.com/jannis-baum/vivify.vim) |
+| Nano    | ❌         | ❌     | ✅          | |
 
 ### Configuration
-Change `$/.config/notewrapper/config.json`. If it does not exist. On building, it should copy a default config.
+Change `~/.config/notewrapper/config.json`. If it does not exist. On building, it should copy a default config.
+
+```json
+{
+  "directory": "~/Documents/Notes/",
+  "render": true,
+  "jumpToEndOfFileOnLaunch": true,
+  "editor": "neovim",
+  "journalRegex": ".*journal.*",
+  "dateEntry": "# %a %d %m %Y",
+  "newLineOnOpening": true,
+  "backup": {
+    "enable": false,
+    "directory": "/path/to/backup",
+    "interval": "weekly"
+  }
+}
+```
+`directory` is the directory where the program will search for vaults.
+
+`render` is a boolean that tells the program if it needs to render the markdown file using `Vivify`
+
+`jumpToEndOfFileOnLaunch` is a boolean that tells the programs if it needs to set the cursor at the end of the file on launch.
+
+`editor` is the editor the program will call. (It must be a supported editor.
+
+`journalRegex` is a regex code. If the note name matches with this code, the program will treat it as a journal.
+
+`dateEntry` is the style of the file title or paragraph title (depending on the type of journal). See [strftime](https://pubs.opengroup.org/onlinepubs/7908799/xsh/strftime.html?) for more info.
+
+`newLineOnOpening` is a boolean that tells the program to append a newline when opening a note.
+
+`backup.enable` enable the backups. The program relies on `rsync` for backuping.
+
+`backup.directory` is the directory where the backup will go.
+
+`backup.interval` can either be `daily`, `weekly`, `monthly` or an integer. It specifies the interval between two backups.
+
+
 
 ### What needs to be done (a lot)
 - [x] Add a way to create vaults
@@ -57,15 +108,14 @@ Change `$/.config/notewrapper/config.json`. If it does not exist. On building, i
 - [x] Actually open vivify when opening nvim
 - [x] Write the journaling code (separate files or one big journal files)
 - [x] Adapt createNewNote with journals
-- [ ] Automatic backups
+- [x] Automatic backups
 - [x] Add flags for customization
 - [ ] Write a good README.md
 - [x] Option to not render and to only open nvim
 - [ ] Figure out this vivify issue https://github.com/jannis-baum/Vivify/issues/291
-- [ ] Maybe port this to other editors
+- [ ] Port this to other editors
 - [x] Port to vim
 - [ ] Fixe all the small stuff marked //(TODO LATER) in the code
-- [ ] Add a way to delete notes
 - [x] Comply with GPL-3 notice (add info about no waranty, etc.)
 - [ ] A converter for both type of journals
 

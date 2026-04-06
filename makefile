@@ -1,6 +1,7 @@
 # Configuration
 CONFIG_DIR := $(HOME)/.config/notewrapper
 CONFIG_FILE := $(CONFIG_DIR)/config.json
+CACHE_DIR := $(HOME)/.cache/notewrapper
 
 # Compiler and flags
 CC := gcc
@@ -18,10 +19,10 @@ SRC := $(SRC_DIR)/main.c $(SRC_DIR)/ui.c $(SRC_DIR)/utils.c $(SRC_DIR)/notes.c
 TARGET := notewrapper
 
 # Phony targets
-.PHONY: all clean run install_config
+.PHONY: all clean run install_config create_cache_dir
 
 # Default target
-all: install_config $(TARGET)
+all: install_config create_cache_dir $(TARGET)
 
 # Build target
 $(TARGET): $(SRC)
@@ -46,3 +47,6 @@ install_config:
 	else \
 		echo "$(CONFIG_FILE) already exists, skipping installing default config file"; \
 	fi
+# creates a dir in ~/.cache/ which is used to store data, such as time of last backup
+create_cache_dir:
+	@mkdir -p $(CACHE_DIR)

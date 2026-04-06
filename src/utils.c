@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <stdio.h>
 
 const char *supportedEditor[] = {"neovim", "vim", "nano"};
 const int numEditors = 3;
@@ -49,6 +50,128 @@ void _error(const int shouldDebug, const int condition, const char *type, const 
   }
 }
 
+void copyDir(const char *source, const char *destination, const int shouldDebug) {
+    debug("Backuping... source: %s and destination: %s", source, destination);
+    pid_t pid = fork();
+    
+    error(pid < 0, "program", "fork() faild. pid = %d", pid);
+
+    if (pid == 0) {
+        // Child process: execute rsync
+        char *args[] = { // (TODO LATER)
+            "rsync",
+            "-Lqah",       // archive, follow links, human-readable // (TODO LATER) add a way to get verbose (-v) without it going on top of ncurses
+            "--progress",  // show progress
+            "--update",    // only update if newer
+            (char *)source,
+            (char *)destination,
+            NULL
+        };
+
+        execvp("rsync", args);
+        // If execvp returns, there was an error
+        error(1, "program", "execvp() failed");
+    } else {
+        debug("Backup started asynchronously with PID %d\n", pid);
+    }
+}
+void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const int shouldDebug) {
+    int shouldBackup = 0;
+    time_t now = time(NULL);
+    debug("Time since epoch is %ld", (long)now);
+    char cacheFilePATH[PATH_MAX];
+    snprintf(cacheFilePATH, PATH_MAX, "%s/.cache/notewrapper/backupTime.txt", homeDir);
+
+    struct stat st;
+    if (stat(cacheFilePATH, &st) != 0) { // file does not exist
+        shouldBackup = 1;
+        FILE *cacheFile = fopen(cacheFilePATH, "w");
+        if (!cacheFile) {
+            error(1, "program", "Failed to open cache file for writing: %s", cacheFilePATH);
+        }
+        fprintf(cacheFile, "%ld", (long)now);
+        fclose(cacheFile);
+    } else {
+        FILE *cacheFile = fopen(cacheFilePATH, "r");
+        if (!cacheFile) {
+            error(1, "program", "Failed to open cache file for reading: %s", cacheFilePATH);
+        }
+
+        char line[64];
+        if (fgets(line, sizeof(line), cacheFile) == NULL) {
+            error(1, "program", "Failed to read backup cache file (at %s)", cacheFilePATH);
+        }
+        fclose(cacheFile);
+
+        char *endptr;
+        long lastBackupTime = strtol(line, &endptr, 10);
+        if (endptr == line || (*endptr != '\n' && *endptr != '\0')) {
+            error(1, "program", "Invalid timestamp in cache file: %s", line);
+        }
+
+        if (difftime(now, lastBackupTime) > interval) {
+            shouldBackup = 1;
+            cacheFile = fopen(cacheFilePATH, "w");
+            if (!cacheFile) {
+                error(1, "program", "Failed to open cache file for writing");
+            }
+            fprintf(cacheFile, "%ld\n", (long)now);
+            fclose(cacheFile);
+        }
+    }
+
+    if (shouldBackup) {
+        copyDir(pathOfVaults, pathOfBackup, shouldDebug);
+    }
+}
+/*void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const int shouldDebug) {
+  int shouldBackup = 0;
+  time_t now = time(NULL);
+  debug("Time since epoch is %ld", (long)now);
+  char cacheFilePATH[PATH_MAX];
+  // we store in this file the epoch time of the last backup to see if we need to backup
+  snprintf(cacheFilePATH, PATH_MAX, "%s/.cache/notewrapper/backupTime.txt", homeDir);
+  FILE *cacheFile = fopen(cacheFilePATH, "r");
+  if (errno == ENOENT) { // if the files does not exists. We backup and set the backup time to now
+    shouldBackup = 1;
+    fclose(cacheFile);
+    cacheFile = fopen(cacheFilePATH, "w");
+    fprintf(cacheFile, "%ld", (long)now);
+    fclose(cacheFile);
+  } else {
+    char line[64];
+    if (fgets(line, sizeof(line), cacheFile) == NULL) {
+        // Error reading the file
+        error(1, "program", "Failed to read backup cache file (at %s)", cacheFilePATH);
+        fclose(cacheFile);
+        return;
+    }
+    fclose(cacheFile);
+
+    // Convert the read line to long
+    char *endptr;
+    long lastBackupTime = strtol(line, &endptr, 10);
+    if (endptr == line || (*endptr != '\n' && *endptr != '\0')) {
+        error(1, "program", "Invalid timestamp in cache file: %s", line);
+        return;
+    }
+
+    if (difftime(now, lastBackupTime) > interval) {
+        shouldBackup = 1;
+        // Update the cache file with current time
+        cacheFile = fopen(cacheFilePATH, "w");
+        if (cacheFile == NULL) {
+            error(1, "program", "Failed to open cache file for writing");
+            return;
+        }
+        fprintf(cacheFile, "%ld\n", (long)now);
+        fclose(cacheFile);
+    }
+  }
+  if (shouldBackup) {
+    copyDir(pathOfVaults, pathOfBackup, shouldDebug);
+  }
+}*/
 
 int doesEditorExist (char *editorToCheck, int shouldDebug) {     // Some exectuables have not exaclty the same name as the editor.
   char *editor;   

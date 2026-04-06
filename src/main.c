@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     char *notesDirectoryString = malloc(PATH_MAX);
     if (dirJson && cJSON_IsString(dirJson) && dirJson->valuestring != NULL) {
       char *rawPath = dirJson->valuestring;
-      if (rawPath[0] == '$') { // expands $ in the path
+      if (rawPath[0] == '~') { // expands ~ in the path
         snprintf(notesDirectoryString, PATH_MAX, "%s/%s", homedir, rawPath+1);
       } else {
         notesDirectoryString = rawPath;
@@ -131,6 +131,46 @@ int main(int argc, char *argv[]) {
       newLineOnOpening = cJSON_IsTrue(newLineOnOpeningJSON) ? 1 : 0;
     } else {debug("config.json did not contained a correct \"newLineOnOpening\" value. The default is true.");}
 
+
+    int doesBackup = 0;
+    int interval = 0; // this is an int. But some times it will be inputed a string. We must translate it.
+    char *pathToBackup = malloc(PATH_MAX);
+    cJSON *backupJSON = cJSON_GetObjectItem(json, "backup");
+    if (backupJSON && cJSON_IsObject(backupJSON)) {
+      cJSON *doesBackupJSON = cJSON_GetObjectItem(backupJSON, "enable");
+      if (doesBackupJSON && cJSON_IsBool(doesBackupJSON)) {
+        doesBackup = cJSON_IsTrue(doesBackupJSON) ? 1 : 0;
+        debug("doesBackup is set to %d", doesBackup);
+        cJSON *pathToBackupJSON = cJSON_GetObjectItem(backupJSON, "directory");
+        if (pathToBackupJSON && cJSON_IsString(pathToBackupJSON)) {
+          if (pathToBackupJSON->valuestring[0] == '~') { // expands ~
+            char *temp = pathToBackupJSON->valuestring;
+            temp++;
+            snprintf(pathToBackup, PATH_MAX, "%s/%s", homedir, temp);
+            debug("~ was expanded to %s\nThe backup path is %s", homedir, pathToBackup);
+          } else {
+            pathToBackup = strndup(pathToBackupJSON->valuestring, PATH_MAX);
+            debug("Directory for backup is set to %s in config.json", pathToBackup); // (TODO LATER) Maybe when in debug message when we say config.json get the actual config name.
+          }
+        } else {error(1, "user", "config.json did not contained a directory inside the backup section or the value is from an unexpected type");}
+        cJSON *intervalJSON = cJSON_GetObjectItem(backupJSON, "interval");
+        if (intervalJSON && cJSON_IsString(intervalJSON)) {
+          if (strcmp(intervalJSON->valuestring, "daily") == 0) { 
+            interval = DAILY;
+            debug("interval in config.json is set to \"daily\" which is %d", DAILY);
+          } else if (strcmp(intervalJSON->valuestring, "weekly") == 0) {
+            interval = WEEKLY;
+            debug("interval in config.json is set to \"weekly\" which is %d", WEEKLY);
+          } else if (strcmp(intervalJSON->valuestring, "monthly") == 0) {
+            interval = MONTHLY;
+            debug("interval in config.json is set to \"monthly\" which is %d", MONTHLY);
+          } else {error(1, "user", "Unexpected string %s for entry \"interval\" in config.json. You must put an int (number of seconds) or \"daily\" or \"weekly\" or \"monthly\".", intervalJSON->valuestring);}
+        } else if (intervalJSON && cJSON_IsNumber(intervalJSON)) {
+          interval = intervalJSON->valueint; // (TODO LATER) "writing to valueint is DEPRECATED, use cJSON_SetNumberValue instead". we should pass all of these JSON->value... to the designed functions
+          debug("interval in config.json is set to %d", interval);
+        } else {error(1, "user", "config.json did not contained an interval value inside the backup section or the value is from an unexpected type");}
+      } else{error(1, "user", "config.json did not contained a enable value inside the backup section or the value is from an unexpected type");}
+    } else {debug("config.json did not contained a correct \"backup\" section. The default is {\"enable\": false}");}
     //cleans up 
     cJSON_Delete(json);
     free(data);
@@ -158,7 +198,7 @@ int main(int argc, char *argv[]) {
           printf("  -e, --editor                                Specify the editor to open.\n");
           printf("  -j, --jump                                  Jumps to the end of the file on opening.\n");
           printf("  -J, --no-jump                               Do not jump to the end of the file\n");
-          printf("  -n, --note  <note's name>                   Specify the note (or journal).");
+          printf("  -n, --note  <note's name>                   Specify the note (or journal).\n");
           printf("  -r, --render                                Renders the note with Vivify.\n");
           printf("  -R, --no-render                             Do not render.\n");
           printf("  -v, --vault <vault's name>                  Specify the vault.\n");
@@ -201,6 +241,10 @@ int main(int argc, char *argv[]) {
 
     error(!doesEditorExist(editorToOpen, shouldDebug), "user", "%s is either not in your path or not installed.", editorToOpen);
     debug("Finished parsing the attribute flags");
+
+    if (doesBackup) { // (TODO LATER) If this takes too much time we should add a warning and when implementing multiple directories for vault we should verifiy this works.
+      handleBackups(notesDirectoryString, pathToBackup, homedir, interval, shouldDebug);
+    }
 
     int shouldExit = 0;
     while(!shouldExit) {

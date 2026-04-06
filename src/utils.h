@@ -18,6 +18,10 @@
 #include <errno.h> 
 #include <time.h>
 #define BUFFER_SIZE 256 //standard buffer size.
+// the three supported values are "daily" "weekly" and "monthly" (for months we use the avarage lenght of a month in a non leap year). All values were calculated on my loyal TI-30 ECO RS
+#define DAILY 86400
+#define WEEKLY 604800
+#define MONTHLY 2628000 // calculated from the average lenght of a non leap year
 #define debug(message, ...) \
     _debug(shouldDebug, __FILE__, __LINE__, __func__, message, ##__VA_ARGS__)
 #define altDebug(message, ...) \
@@ -67,4 +71,7 @@ int openEditor(char *path, char *editor, int render, int shouldJumpToEndOfFile, 
 // returns a string (buffered at 256 chars).
 // you should not forgot to free this string as it is in the heap.
 char *getFormatedTime(char *format, int shouldDebug);
+/* Caclulates if we need to do another backup (by reading ~/.cache/NoteWrapper/backupTime.txt.
+If need launches in the background rsync to do the backuping.*/
+void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const int shouldDebug);
 #endif

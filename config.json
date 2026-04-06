@@ -1,9 +1,14 @@
 {
-  "directory": "$/Documents/Notes/",
+  "directory": "~/Documents/Notes/",
   "render": true,
   "jumpToEndOfFileOnLaunch": true,
   "editor": "neovim",
   "journalRegex": ".*journal.*",
   "dateEntry": "# %a %d %m %Y",
-  "newLineOnOpening": true
+  "newLineOnOpening": true,
+  "backup": {
+    "enable": false,
+    "directory": "/path/to/backup",
+    "interval": "weekly"
+  }
 }
