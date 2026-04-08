@@ -1,33 +1,39 @@
 #include "ui.h"
+#include <string.h>
 
-void createNewVault(char *dirToVault, int shouldDebug) {
+void createNewVault(char *dirToVault, int bypass, char *bypassvalue, int shouldDebug) {
   // (TODO LATER) warn if it matches the regex for the journal
   //(TODO LATER) add a way to go back to vault selection
   int duplicateWarning = 0; // set to 1 later if the vault you tried to create already existed
 input_screen:
-  char vaultName[256];
-  initscr();
-  echo();
-  keypad(stdscr, FALSE);
-  // color code from https://stackoverflow.com/a/73396575
-  start_color();
-  clear();
-  use_default_colors();
-  init_pair(1, COLOR_WHITE, -1); // -1 is blank
-  init_pair(2, COLOR_RED, -1);
-  attron(COLOR_PAIR(1));
-  printw("Enter the name of the new vault: ");
-  mvprintw(3, 0, "Unsafe characters such as \\ and / will be replaced by _");
-  attroff(COLOR_PAIR(1));
-  if (duplicateWarning) {
-    attron(COLOR_PAIR(2));
-    mvprintw(4, 0, "A vault with this name already exists. Please input another name");
-    attroff(COLOR_PAIR(2));
+  char *vaultName = malloc(PATH_MAX);
+  if (!bypass) { // if won't bypass (if -v or --vault weren't set)
+    initscr();
+    echo();
+    keypad(stdscr, FALSE);
+    // color code from https://stackoverflow.com/a/73396575
+    start_color();
+    clear();
+    use_default_colors();
+    init_pair(1, COLOR_WHITE, -1); // -1 is blank
+    init_pair(2, COLOR_RED, -1);
+    attron(COLOR_PAIR(1));
+    printw("Enter the name of the new vault: ");
+    mvprintw(3, 0, "Unsafe characters such as \\ and / will be replaced by _");
+    attroff(COLOR_PAIR(1));
+    if (duplicateWarning) {
+      attron(COLOR_PAIR(2));
+      mvprintw(4, 0, "A vault with this name already exists. Please input another name");
+      attroff(COLOR_PAIR(2));
+    }
+    move(1, 1); // replace cursor 
+    wgetnstr(stdscr, vaultName, sizeof(vaultName)-1);
+    refresh();
+    endwin();
+  } else {
+    strncpy(vaultName, bypassvalue, PATH_MAX -2); // -2 (and later -1) because indexing
+    vaultName[PATH_MAX-1] = '\0'; // (TODO LATER) if bypassvalue << PATH_MAX, we loose a lot of space. maybe check strlen(bypassvalue) and append there a \0
   }
-  move(1, 1); // replace cursor 
-  wgetnstr(stdscr, vaultName, sizeof(vaultName)-1);
-  refresh();
-  endwin();
   error(strcmp(vaultName, "") == 0, "user", "vaultName is empty"); // (TODO LATER) replace that with a warning
   debug("Inputed vaultName=%s", vaultName);
   sanitize(vaultName);
@@ -43,15 +49,16 @@ input_screen:
     duplicateWarning = 1;
     goto input_screen;
   }
-  
+  free(vaultName);
+// (TODO LATER) after creating we should automatically select this vault
 }
 
-char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, char *bypass, char *journalRegex, int shouldDebug) {
+char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, char *bypassvalue, char *journalRegex, int shouldDebug) {
   // (TODO LATER) Add code to create journal
   // (TODO LATER) Add check. If the user creates a note with a name that already exists. it erases the old one
   // input from user for the name
   char *fileName = malloc(BUFFER_SIZE);
-  if (strcmp(bypass, HASH_MACRO) == 0) {
+  if (!bypass) { // if we don't bypass. (if -n or --note weren't set.)
     initscr();
     echo();
     keypad(stdscr, FALSE);
@@ -63,8 +70,8 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, char *bypass,
     wgetnstr(stdscr, fileName, BUFFER_SIZE-4); //limits the buffer to prevent overflow (-4 to account indexing and from ".md" in case we need to add it later)
     refresh();
     endwin();
-  } else { // bypasses user input if we bypass is different than HASH_MACRO
-    strncpy(fileName, bypass, BUFFER_SIZE-1); // (TODO LATER) Maybe add a warning if string is too big. It gets truncated
+  } else { // bypasses user input if we bypass is set to 1
+    strncpy(fileName, bypassvalue, BUFFER_SIZE-1); // (TODO LATER) Maybe add a warning if string is too big. It gets truncated
     fileName[BUFFER_SIZE-1] = '\0';
   }
   // (TODO LATER) add a way to go back to note selection

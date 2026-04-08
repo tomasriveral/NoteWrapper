@@ -4,7 +4,7 @@
   "jumpToEndOfFileOnLaunch": true,
   "editor": "neovim",
   "journalRegex": ".*journal.*",
-  "dateEntry": "# %a %d %m %Y",
+  "dateEntry": "# %Y %m %d %a",
   "newLineOnOpening": true,
   "backup": {
     "enable": false,

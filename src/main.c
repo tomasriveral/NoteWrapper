@@ -16,7 +16,6 @@
 int main(int argc, char *argv[]) {
     int shouldDebug = 0;
     int overwriteConfigPath = 0; 
-    // (TODO LATER) we really should change all the HASH_MACRO to an int that checks if it is overwritten and a char* that stores to the string
     // all of the argument parsing is done after so flags overwrite config options. The only config options that can't be set in the config is the shouldDebug and specifing the path to the config
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--verbose") == 0) {
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
     size_t readBytes = fread(data, 1, size, f); // 1 --> size of each item
     
     if (readBytes!=size) {free(data);fclose(f);}
-    error(readBytes!=size, "program", "Failed to read config file (&zu bytes read, expected %ld)", readBytes, size);
+    error(readBytes!=size, "program", "Failed to read config file (%s) (%zu bytes read, expected %ld)", configPath, readBytes, size);
     data[size] = '\0';
     fclose(f);
 
@@ -72,21 +71,21 @@ int main(int argc, char *argv[]) {
     cJSON *json = cJSON_Parse(data);
     if (!json) {free(data);}
     error(!json, "program", "JSON parse error");
-    
+   
     cJSON *dirJson = cJSON_GetObjectItem(json, "directory");
     char *notesDirectoryString = malloc(PATH_MAX);
-    if (dirJson && cJSON_IsString(dirJson) && dirJson->valuestring != NULL) {
-      char *rawPath = dirJson->valuestring;
+    if (dirJson && cJSON_IsString(dirJson) && cJSON_GetStringValue(dirJson) != NULL) { // we replaced all the ->valuestr and ->valueint to cJSON_GetStringValue() and cJSON_GetNumberValue()
+      char *rawPath = cJSON_GetStringValue(dirJson);
       if (rawPath[0] == '~') { // expands ~ in the path
         snprintf(notesDirectoryString, PATH_MAX, "%s/%s", homedir, rawPath+1);
       } else {
         notesDirectoryString = rawPath;
       }
-      debug("config.json's vault's directory is %s", notesDirectoryString);
+      debug("In %s, \"directory\" was set to %s.", configPath,  notesDirectoryString);
     } else {
       // default vault path if it is not set in the config
       snprintf(notesDirectoryString, PATH_MAX, "%s/Documents/Notes/", homedir);
-      debug("the vault's directory is not set in the config file. Using default %s", notesDirectoryString);
+      debug("In %s, \"directory\" wasn't set or we encountered a abnormal type. Defaulting to %s.", configPath, notesDirectoryString);
     }
 
     // fetch the render and jumpToEnfOfFileOnLaunch bools
@@ -94,43 +93,58 @@ int main(int argc, char *argv[]) {
     cJSON *shouldRenderJSON = cJSON_GetObjectItem(json, "render");
     if (shouldRenderJSON && cJSON_IsBool(shouldRenderJSON)) {
         shouldRender = cJSON_IsTrue(shouldRenderJSON) ? 1 : 0;
-    } else {debug("config.json did not contained a correct \"render\" value. The default is 1.");}
+        debug("In %s, \"render\" was set to %d.", configPath, shouldRender);
+    } else {
+        debug("In %s, \"render\" wasn't set. Defaulting to true.", configPath);
+    }
     
     int shouldJumpToEnd = 1;
     cJSON *shouldJumpToEndJSON = cJSON_GetObjectItem(json, "jumpToEndOfFileOnLaunch");
     if (shouldJumpToEndJSON && cJSON_IsBool(shouldJumpToEndJSON)) {
       shouldJumpToEnd = cJSON_IsTrue(shouldJumpToEndJSON) ? 1 : 0;
-    } else {debug("config.json did not contained a correct \"jumpToEndOfFileOnLaunch\" value. The default is 1.");}
+      debug("In %s, \"jumpToEndOfFileOnLaunch\" was set to %d.", configPath, shouldJumpToEnd);
+
+    } else {
+      debug("In %s, \"jumpToEndOfFileOnLaunch\" wasn't set or we encountered a abnormal type. Defaulting to true.", configPath);
+    }
     
     char *editorToOpen = "neovim"; // default
     cJSON *editorToOpenJSON = cJSON_GetObjectItem(json, "editor");
     if (editorToOpenJSON && cJSON_IsString(editorToOpenJSON)) {
-      debug("Editor in config.json is %s", editorToOpenJSON->valuestring);
-      error(!isStringInArray(editorToOpenJSON->valuestring, supportedEditor, numEditors), "user", "%s (fetched from config.json) is not a supported editor.", editorToOpenJSON->valuestring);
-      editorToOpen = strdup(editorToOpenJSON->valuestring); // we must strdup and not just = as we will free all the json after (before parsing args)
-    } else {debug("config.json did not contained a correct \"editor\" value. The default is neovim.");}
+      editorToOpen = strdup(cJSON_GetStringValue(editorToOpenJSON)); // we must strdup and not just = as we will free all the json after (before parsing args)
+      debug("In %s, \"editor\" was set to %s.", configPath, editorToOpen);
+      error(!isStringInArray(editorToOpen, supportedEditor, numEditors), "user", "%s (fetched from config.json) is not a supported editor.", editorToOpen);
+    } else {
+      debug("In %s, \"editor\" wasn't set or we encountered a abnormal type. Defaulting to %s.", configPath, editorToOpen);
+    }
     
     cJSON *journalRegexJSON = cJSON_GetObjectItem(json, "journalRegex");
     char *journalRegex = ".*journal.*"; // default regex pattern for the journal
     if (journalRegexJSON && cJSON_IsString(journalRegexJSON)) {
-      debug("The regex in config.json is %s", journalRegexJSON->valuestring);
-      journalRegex = strdup(journalRegexJSON->valuestring);
-    } else {debug("config.json did not contained a correct \"journalRegex\" value. The default is .*journal.*");}
+      journalRegex = strdup(cJSON_GetStringValue(journalRegexJSON));
+      debug("In %s, \"journalRegex\" was set to %s.", configPath, journalRegex);
+    } else {
+      debug("In %s, \"journalRegex\" wasn't set or we encountered a abnormal type. Defaulting to %s.", configPath, journalRegex);
+    }
 
-    char *timeFormat = "# \%a \%d \%m \%Y";// default
+    char *timeFormat = "# \%Y \%m \%d \%a";// default
     cJSON *timeFormatJSON = cJSON_GetObjectItem(json, "dateEntry");
     if (timeFormatJSON && cJSON_IsString(timeFormatJSON)) {
-      debug("The time format in config.json is %s", timeFormatJSON->valuestring);
-      timeFormat = strdup(timeFormatJSON->valuestring);
-    } else {debug("config.json did not contained a correct \"dateEntry\" value. The default is \"# \%a \%d \%m \%Y\".");}
-
+      timeFormat = strdup(cJSON_GetStringValue(timeFormatJSON));
+      debug("In %s, \"dateEntry\" was set to %s.", configPath, timeFormat);
+    } else {
+      debug("In %s, \"dateEntry\" wasn't set or we encountered a abnormal type. Defaulting to %s.", configPath, timeFormat);
+    }
     int newLineOnOpening = 1;
     cJSON *newLineOnOpeningJSON = cJSON_GetObjectItem(json, "newLineOnOpening");
     if (newLineOnOpeningJSON && cJSON_IsBool(newLineOnOpeningJSON)) {
       debug("The value for newLineOnOpening in config.json is %d", cJSON_IsTrue(newLineOnOpeningJSON));
-      newLineOnOpening = cJSON_IsTrue(newLineOnOpeningJSON) ? 1 : 0;
-    } else {debug("config.json did not contained a correct \"newLineOnOpening\" value. The default is true.");}
 
+      newLineOnOpening = cJSON_IsTrue(newLineOnOpeningJSON) ? 1 : 0;
+      debug("In %s, \"newLineOnOpening\" was set to %d.", configPath, newLineOnOpening);
+    } else {
+      debug("In %s, \"newLineOnOpening\" wasn't set or we encountered a abnormal type. Defaulting to true.", configPath);
+    }
 
     int doesBackup = 0;
     int interval = 0; // this is an int. But some times it will be inputed a string. We must translate it.
@@ -143,34 +157,37 @@ int main(int argc, char *argv[]) {
         debug("doesBackup is set to %d", doesBackup);
         cJSON *pathToBackupJSON = cJSON_GetObjectItem(backupJSON, "directory");
         if (pathToBackupJSON && cJSON_IsString(pathToBackupJSON)) {
-          if (pathToBackupJSON->valuestring[0] == '~') { // expands ~
-            char *temp = pathToBackupJSON->valuestring;
-            temp++;
+          char *temp = cJSON_GetStringValue(pathToBackupJSON); // we name it temp. As we can't directly set pathToBackup because snprintf doesn't like when a pointer is both an arg and the destination // temp should be freed when free(json), because cJSON_GetStringValue returns a pointer.
+          if (temp[0] == '~') { // expands ~
+            temp++; // we shift by one to remove ~
             snprintf(pathToBackup, PATH_MAX, "%s/%s", homedir, temp);
             debug("~ was expanded to %s\nThe backup path is %s", homedir, pathToBackup);
           } else {
-            pathToBackup = strndup(pathToBackupJSON->valuestring, PATH_MAX);
-            debug("Directory for backup is set to %s in config.json", pathToBackup); // (TODO LATER) Maybe when in debug message when we say config.json get the actual config name.
+            pathToBackup = strndup(temp, PATH_MAX); // temp will be freed later so strndup
+            debug("Directory for backup is set to %s in config.json", pathToBackup);
           }
         } else {error(1, "user", "config.json did not contained a directory inside the backup section or the value is from an unexpected type");}
         cJSON *intervalJSON = cJSON_GetObjectItem(backupJSON, "interval");
         if (intervalJSON && cJSON_IsString(intervalJSON)) {
-          if (strcmp(intervalJSON->valuestring, "daily") == 0) { 
+          char *temp = cJSON_GetStringValue(intervalJSON); // se comment higher. temp will be freed when calling free(json)
+          if (strcmp(temp, "daily") == 0) { 
             interval = DAILY;
             debug("interval in config.json is set to \"daily\" which is %d", DAILY);
-          } else if (strcmp(intervalJSON->valuestring, "weekly") == 0) {
+          } else if (strcmp(temp, "weekly") == 0) {
             interval = WEEKLY;
             debug("interval in config.json is set to \"weekly\" which is %d", WEEKLY);
-          } else if (strcmp(intervalJSON->valuestring, "monthly") == 0) {
+          } else if (strcmp(temp, "monthly") == 0) {
             interval = MONTHLY;
             debug("interval in config.json is set to \"monthly\" which is %d", MONTHLY);
           } else {error(1, "user", "Unexpected string %s for entry \"interval\" in config.json. You must put an int (number of seconds) or \"daily\" or \"weekly\" or \"monthly\".", intervalJSON->valuestring);}
         } else if (intervalJSON && cJSON_IsNumber(intervalJSON)) {
-          interval = intervalJSON->valueint; // (TODO LATER) "writing to valueint is DEPRECATED, use cJSON_SetNumberValue instead". we should pass all of these JSON->value... to the designed functions
+          interval = (int)cJSON_GetNumberValue(intervalJSON);
           debug("interval in config.json is set to %d", interval);
         } else {error(1, "user", "config.json did not contained an interval value inside the backup section or the value is from an unexpected type");}
       } else{error(1, "user", "config.json did not contained a enable value inside the backup section or the value is from an unexpected type");}
-    } else {debug("config.json did not contained a correct \"backup\" section. The default is {\"enable\": false}");}
+    } else {
+      debug("In %s, \"backup\" wasn't set or we encountered a abnormal type. Defaulting to {\"enable\": false}.", configPath);
+    }
     //cleans up 
     cJSON_Delete(json);
     free(data);
@@ -182,8 +199,11 @@ int main(int argc, char *argv[]) {
     // (TODO LATER) maybe add a way to combine flags (such which rm -fr?)
     // (TODO LATER) add a version flag
     debug("Parsing the attribute flags.\n This flags might overwrite the options in the config file.");
-    char *bypassVaultSelection = HASH_MACRO; // (TODO LATER) find a better idea. If later it detects other string than that 256 string. It will bypass the selection
-    char *bypassNoteSelection = HASH_MACRO;
+    // thoses bypasses are used if some specific flags are passed as args. This allows to bypass the TUI selectors
+    int bypassSelectionVault = 0;
+    char *bypassSelectionVaultValue = NULL;
+    int bypassSelectionNote = 0;
+    char *bypassSelectionNoteValue = NULL;
     for (int i = 1; i < argc; i++) {
       if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--directory") == 0) {
           error(i+1==argc, "user", "Missing argument. Please use -d <path/to/directory> or --directory <path/to/directory>.");
@@ -216,9 +236,10 @@ int main(int argc, char *argv[]) {
       } else if (strcmp(argv[i], "-J") == 0 || strcmp(argv[i], "--no-jump") == 0) {
           debug("-j or --jump set jumpToEnfOfFileOnLaunch to false"); 
           shouldJumpToEnd = 0;
-      } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--note") == 0) { // (TODO LATER) Broken if we put the -v flag after the -n flag
+      } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--note") == 0) {// if -n is set and not -v -> problems. We verify this case at the end of the parsing.
           error(i+1==argc, "user", "Missing argument. Please user -n <note's name> or --note <note's name>.");
-          bypassNoteSelection = argv[i+1];
+          bypassSelectionNote = 1;
+          bypassSelectionNoteValue = argv[i+1]; // if somehow we pass a flag like -v it will create a new note with the name. So no need to worry if something is invalid. Just verifing that there is an arg after is good.
       } else if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--render") == 0) {
           debug("-r or --render set shouldRender to true");
           shouldRender = 1;
@@ -227,7 +248,8 @@ int main(int argc, char *argv[]) {
           debug("-r or --render set shouldRender to false");
       } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--vault") == 0) {
           error(i+1==argc, "user", "Missing argument. Pleaase use -v <vault's name> or --vault <vault's name>");
-          bypassVaultSelection = argv[i+1]; // (TODO LATER) Add security checks pass ti strndup. and if vault don't exist create one. SEE (TODO LATER) where bypassVaultSelection is checked (TODO LATER) Add check if vault exist
+          bypassSelectionVault = 1;
+          bypassSelectionVaultValue = argv[i+1]; // (TODO LATER) Add security checks pass ti strndup. and if vault don't exist create one. SEE (TODO LATER) where bypassVaultSelection is checked (TODO LATER) Add check if vault exist
       } else if (strcmp(argv[i], "--version") == 0) {
           printf("There is still no released version\n\n     Copyright (C) 2026 Tomás Rivera\n     License GPLv3: GNU GPL version 3 <https://gnu.org/licenses/gpl.html>.\n     This is free software: you are free to change and redistribute it.\n     There is NO WARRANTY, to the extent permitted by law.\n\n     Written by Tomás Rivera.\n");
           return 0;
@@ -235,8 +257,8 @@ int main(int argc, char *argv[]) {
           error(1, "user", "unexpected argument \"%s\" found\nFor more information, try \"--help\".", argv[i]);
       }
     }
-    // if -n or --note is set but note -v or --vaults
-    error(strcmp(bypassVaultSelection, HASH_MACRO) == 0 && strcmp(bypassNoteSelection, HASH_MACRO) != 0, "user", "If you want to specify the note, you must also specify the vault with -v <vault's name> or --vault <vault's name>.");
+    // if -n or --note is set but not -v or --vaults it gives an error
+    error(!bypassSelectionVault && bypassSelectionNote, "user", "If you want to specify the note, you must also specify the vault with -v <vault's name> or --vault <vault's name>.");
 
 
     error(!doesEditorExist(editorToOpen, shouldDebug), "user", "%s is either not in your path or not installed.", editorToOpen);
@@ -249,8 +271,25 @@ int main(int argc, char *argv[]) {
     int shouldExit = 0;
     while(!shouldExit) {
       // this loop is the vault selector
+      // select a vault
+      char *vaultSelected = NULL;
+
       size_t vaultsCount = 0;
       char **vaultsArray = getVaultsFromDirectory(notesDirectoryString, &vaultsCount, shouldDebug);
+
+      // bypass if -v or --vault is set
+      if (bypassSelectionVault) {
+        // bypasses the vault selection if the flag is -v. If the vault doesn't exist, just create a new one
+        vaultSelected = bypassSelectionVaultValue;
+        debug("bypassing vault selection");
+        if (!isStringInArray(bypassSelectionVaultValue, (const char **)vaultsArray, vaultsCount)) { // we pass just vaultsCount and not vaultsCount + extraOptions to avoid matching with the extraOptions.
+          debug("[BYPASS] %s did not exist. Creating a new vault");
+          goto vault_creation;
+        } else {
+          goto note_selection;
+        }
+      }
+
       qsort(vaultsArray, vaultsCount, sizeof(const char *), compareString); // sorts the vaults alphabetically
       debug("Available vaults");
       if (shouldDebug) {
@@ -266,14 +305,8 @@ int main(int argc, char *argv[]) {
       vaultsArray[vaultsCount] = "Create a new vault"; // some more options that are not vaults
       vaultsArray[vaultsCount+1] = "Settings";
       vaultsArray[vaultsCount+2] = "Quit (Ctrl+C)";
-      // select a vault
-      char *vaultSelected = NULL;
-
-      if (strcmp(bypassVaultSelection, HASH_MACRO) != 0) {
-        // bypasses the vault selection if the flag is -v (TODO LATER) use isStringInArray() to check if the vault really exists  
-        vaultSelected = bypassVaultSelection;
-          goto note_selection;
-      }
+      
+      
       vaultSelected = ncursesSelect(vaultsArray, "Select vault to open (Use arrows or WASD, Enter to select):", vaultsCount, extraOptions, " ", "Or select an option below", "", shouldDebug);
      
       // now that we won't use vaultsArray in this iteration of the loop, we should free it and all its elements. (As this is memory in the heap and not the stack and thus is our responsability to manage)
@@ -287,7 +320,7 @@ int main(int argc, char *argv[]) {
       debug("Selected vault: %s", vaultSelected);
       if (strcmp(vaultSelected,"Create a new vault") != 0 && strcmp(vaultSelected,"Settings") != 0 && strcmp(vaultSelected,"Quit (Ctrl+C)") != 0) {
 note_selection:
-        bypassVaultSelection = HASH_MACRO; // we must reset bypassVaultSelection to not get stuck in a infinite loop of bypassing
+        bypassSelectionVault = 0; // we must reset bypassSelectionVault to not get stuck in a infinite loop of bypassing
         int shouldChangeVault = 0;
         while (!shouldExit && !shouldChangeVault) {
           // this loop is the note selector
@@ -319,10 +352,11 @@ note_selection:
           filesArray[filesCount+2] = "Delete vault";
           filesArray[filesCount+3] = "Quit (Ctrl+C)";
           char *noteSelected;
-          if (strcmp(bypassNoteSelection, HASH_MACRO) != 0) {
+          // if we set to bypass the note selector
+          if (bypassSelectionNote) {
             // (TODO LATER) Add shouldDebug info
-            noteSelected = bypassNoteSelection;
-            if (isStringInArray(noteSelected, (const char **)filesArray, filesCount + extraNotesOptions)) {// (TODO LATER) Handle the case where the note name is one of the extraOptions
+            noteSelected = bypassSelectionNoteValue;
+            if (isStringInArray(noteSelected, (const char **)filesArray, filesCount)) {// we just give filesCount and not filesCount + extraOptions to avoid matching with an extra options.
               goto open_note;
             } else { // if the specified note doesn't exist. We creat it
               goto note_creation;
@@ -339,7 +373,7 @@ note_selection:
           debug("Selected note: %s", noteSelected);
           if (strcmp(noteSelected, "Create new note") != 0 && strcmp(noteSelected,"Back to vault selection") != 0 && strcmp(noteSelected, "Delete vault") != 0 && strcmp(noteSelected,"Quit (Ctrl+C)") != 0) {
 open_note:
-            bypassNoteSelection =  HASH_MACRO; // we must reset bypassNoteSelection to avoid getting into an infinite loop of bypassing the note selection
+            bypassSelectionNote = 0; // we must reset bypassSelectionNote to avoid getting into an infinite loop of bypassing the note selection
             char *fullPath = malloc(PATH_MAX); // (TODO LATER) Find a more appropriate and descriptive name for the variable
             sprintf(fullPath, "%s/%s/%s", notesDirectoryString, vaultSelected, noteSelected); // (TODO LATER) change all sprintf to snprintf which checks for buffer size
             // if it is a journal we must update it before
@@ -358,7 +392,7 @@ open_note:
             free(fullPath);
           } else if (strcmp(noteSelected,"Create new note") == 0) {
 note_creation:
-            noteSelected = createNewNote(notesDirectoryString, vaultSelected, bypassNoteSelection, journalRegex, shouldDebug);
+            noteSelected = createNewNote(notesDirectoryString, vaultSelected, bypassSelectionNote, bypassSelectionNoteValue, journalRegex, shouldDebug);
             // we can just go back to open_note
             goto open_note;
           } else if (strcmp(noteSelected,"Back to vault selection") == 0) {
@@ -382,9 +416,10 @@ note_creation:
         }
 
       } else if (strcmp(vaultSelected,"Create a new vault") == 0) {
-        createNewVault(notesDirectoryString, shouldDebug);
+vault_creation:
+        createNewVault(notesDirectoryString, bypassSelectionVault, bypassSelectionVaultValue, shouldDebug);
+        bypassSelectionVault = 0; // we need to reset bypassSelectionVault to avoid getting into an infinite loop of bypassing 
       } else if (strcmp(vaultSelected,"Settings") == 0) {
-        // (TODO LATER) add a way to modify the path to config.json
         openEditor(configPath, editorToOpen, 0, 0, shouldDebug); // as this is not a md file we set render and jumptoEnfOfFile to 0
       } else if (strcmp(vaultSelected,"Quit (Ctrl+C)") == 0) {
         debug("The program was exited");

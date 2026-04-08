@@ -28,7 +28,6 @@
     _altDebug(shouldDebug, message, ##__VA_ARGS__)
 #define error(condition, type, message, ...) \
   _error(shouldDebug, condition, type, __FILE__, __LINE__, __func__, message, ##__VA_ARGS__)
-#define HASH_MACRO "0ea1d20bcdd52c46c086d3dba125b9b83ad8cbea2e026d5646775f48bae8f867" // if the user inputs this hash. The program brokes. It was the best way i found to see if some values were unchanged
 // you must edit this two values if you want to add suport for an editor
 extern const char *supportedEditor[]; // array of supported editors
 extern const int numEditors; // number of supported editors
