@@ -9,12 +9,22 @@ int compareString(const void *a, const void *b) {
     return strcmp(str1, str2); // strcmp returns <0, 0, >0
 }
 
+void getCurrentTime(int *hour, int *minute, int *second) {
+    time_t now = time(NULL);              // Get current time in seconds since epoch
+    struct tm *local = localtime(&now);   // Convert to local time structure
+
+    *hour = local->tm_hour;               // Extract hour
+    *minute = local->tm_min;              // Extract minutes
+    *second = local->tm_sec;              // Extract seconds
+}
+
 void _debug(const int d, const char *file, const int line, const char *function, const char *message, ...) { // use for formatted debug
   if (d) {
     va_list args; //variadic function stuff
     va_start(args, message);
-
-    fprintf(stderr, "\e[0;32m[DEBUG] From file %s line %d function %s:\e[0m\n", file, line, function);
+    int h, m, s;
+    getCurrentTime(&h, &m, &s);
+    fprintf(stderr, "\e[0;32m[DEBUG -- %d:%d:%d] From file %s line %d function %s:\e[0m\n", h, m, s, file, line, function);
     vfprintf(stderr, message, args);
     printf("\e[0m\n");
     va_end(args);
@@ -31,7 +41,9 @@ void _altDebug(const int d, const char *message, ...) { // use for less formal d
 
 void _error(const int shouldDebug, const int condition, const char *type, const char *file, const int line, const char *function, const char *message, ...) { // used for formatted errors
   if (condition) {
-    fprintf(stderr, "\e[0;31m[%s ERROR] From file %s line %d function %s:\n", type, file, line, function);
+    int h, m, s;
+    getCurrentTime(&h, &m, &s);
+    fprintf(stderr, "\e[0;31m[%s ERROR -- %d:%d:%d] From file %s line %d function %s:\n", type, h, m, s, file, line, function);
     if (errno != 0) {
         fprintf(stderr, " (System-level error message: %s)\n", strerror(errno));
     } else {
@@ -245,88 +257,96 @@ int rmrf(char *path) {
 
 int openEditor(char *path, char *editor, int render, int shouldJumpToEndOfFile, int shouldDebug) {
 
-  pid_t editor_pid = fork();
-  error(editor_pid < 0, "program", "fork() failed.");
+// this ensures that ncurses won't affect the editor behaviour
+pid_t editor_pid = fork();
+error(editor_pid < 0, "program", "fork() failed.");
 
-  if (editor_pid == 0) {
-    // =========================
-    // CHILD: launch editor
-    // =========================
+if (editor_pid == 0) {
+  // =========================
+  // CHILD: launch editor
+  // =========================
 
-    // ---- NEOVIM / VIM ----
-    if (strcmp(editor, "neovim") == 0 || strcmp(editor, "vim") == 0) {
-      const char *bin = (strcmp(editor, "neovim") == 0) ? "nvim" : "vim";
+  // ---- NEOVIM / VIM ----
+  if (strcmp(editor, "neovim") == 0 || strcmp(editor, "vim") == 0) {
+    const char *bin = (strcmp(editor, "neovim") == 0) ? "nvim" : "vim";
 
-      if (render) {
-        if (shouldJumpToEndOfFile) {
-          debug("Running %s +:$ +:Vivify %s", bin, path);
-          execlp(bin, bin, "+:$", "+:Vivify", path, NULL);
-        } else {
-          debug("Running %s +:Vivify %s", bin, path);
-          execlp(bin, bin, "+:Vivify", path, NULL);
-        }
-      } else {
-        if (shouldJumpToEndOfFile) {
-          debug("Running %s +:$ %s", bin, path);
-          execlp(bin, bin, "+:$", path, NULL);
-        } else {
-          debug("Running %s %s", bin, path);
-          execlp(bin, bin, path, NULL);
-        }
-      }
-
-      error(1, "program", "execlp() failed.");
-    }
-
-    // ---- NANO ----
-    else if (strcmp(editor, "nano") == 0) {
-
-      // If render enabled → spawn viv in parallel
-      if (render) {
-        pid_t viv_pid = fork();
-        error(viv_pid < 0, "program", "fork() failed.");
-
-        if (viv_pid == 0) {
-          // GRANDCHILD → viv
-          char viv_path[PATH_MAX];
-          strncpy(viv_path, path, PATH_MAX - 1);
-          viv_path[PATH_MAX - 1] = '\0';
-
-          if (shouldJumpToEndOfFile) {
-            strncat(viv_path, ":99999",
-                    PATH_MAX - strlen(viv_path) - 1);
-          }
-
-          debug("Running viv %s", viv_path);
-          execlp("viv", "viv", viv_path, NULL);
-          error(1, "program", "execlp() failed.");
-        }
-        // IMPORTANT: do NOT wait for viv
-      }
-
-      // Now run nano (this replaces the child process)
+    if (render) {
       if (shouldJumpToEndOfFile) {
-        debug("Running nano + %s", path);
-        execlp("nano", "nano", "+", path, NULL);
+        debug("Running %s +:$ +:Vivify %s", bin, path);
+        execlp(bin, bin, "+:$", "+:Vivify", path, NULL);
       } else {
-        debug("Running nano %s", path);
-        execlp("nano", "nano", path, NULL);
+        debug("Running %s +:Vivify %s", bin, path);
+        execlp(bin, bin, "+:Vivify", path, NULL);
       }
-
-      error(1, "program", "execlp() failed.");
+    } else {
+      if (shouldJumpToEndOfFile) {
+        debug("Running %s +:$ %s", bin, path);
+        execlp(bin, bin, "+:$", path, NULL);
+      } else {
+        debug("Running %s %s", bin, path);
+        execlp(bin, bin, path, NULL);
+      }
     }
 
-    // ---- UNKNOWN EDITOR ----
-    else {
-      error(1, "program", "Unknown editor.");
-    }
+    error(1, "program", "execlp() failed.");
   }
 
-  // =========================
-  // PARENT: wait ONLY editor
-  // =========================
-  int status;
-  waitpid(editor_pid, &status, 0);
+  // ---- NANO ----
+  else if (strcmp(editor, "nano") == 0) {
 
-  return 0;
+    // If render enabled → spawn viv in parallel
+    if (render) {
+      debug("Running the editor...");
+      pid_t viv_pid = fork();
+      error(viv_pid < 0, "program", "fork() failed.");
+
+      if (viv_pid == 0) {
+        // GRANDCHILD → viv
+        
+
+        char viv_path[PATH_MAX];
+        strncpy(viv_path, path, PATH_MAX - 1);
+        viv_path[PATH_MAX - 1] = '\0';
+
+        if (shouldJumpToEndOfFile) {
+          strncat(viv_path, ":99999",
+                  PATH_MAX - strlen(viv_path) - 1);
+        }
+
+        debug("Running viv %s", viv_path);
+        execlp("viv", "viv", viv_path, NULL);
+        error(1, "program", "execlp() failed.");
+      }
+      // IMPORTANT: do NOT wait for viv
+    }
+
+    // Now run nano (this replaces the child process)
+    if (shouldJumpToEndOfFile) {
+      debug("Running nano + %s", path);
+      execlp("nano", "nano", "+", path, NULL);
+    } else {
+      debug("Running nano %s", path);
+      execlp("nano", "nano", path, NULL);
+    }
+
+    error(1, "program", "execlp() failed.");
+  }
+
+  // ---- UNKNOWN EDITOR ----
+  else {
+    error(1, "program", "Unknown editor.");
+  }
+    }
+    
+    // =========================
+    // PARENT: wait ONLY editor
+    // =========================
+    int status;
+    while (waitpid(editor_pid, &status, 0) == -1) { // we can't just use waitpid(). Because when resizing the terminal, waitpid() is returned so we loop to see if there is not a problem
+      if (errno != EINTR) {
+        perror("waitpid");
+        break;
+      }
+    }
+    return 0;
 }

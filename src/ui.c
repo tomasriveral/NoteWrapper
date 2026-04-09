@@ -1,5 +1,4 @@
 #include "ui.h"
-#include <string.h>
 
 void createNewVault(char *dirToVault, int bypass, char *bypassvalue, int shouldDebug) {
   // (TODO LATER) warn if it matches the regex for the journal
@@ -8,7 +7,6 @@ void createNewVault(char *dirToVault, int bypass, char *bypassvalue, int shouldD
 input_screen:
   char *vaultName = malloc(PATH_MAX);
   if (!bypass) { // if won't bypass (if -v or --vault weren't set)
-    initscr();
     echo();
     keypad(stdscr, FALSE);
     // color code from https://stackoverflow.com/a/73396575
@@ -30,6 +28,9 @@ input_screen:
     wgetnstr(stdscr, vaultName, sizeof(vaultName)-1);
     refresh();
     endwin();
+    reset_shell_mode();
+    fflush(stdout);
+    fflush(stderr);
   } else {
     strncpy(vaultName, bypassvalue, PATH_MAX -2); // -2 (and later -1) because indexing
     vaultName[PATH_MAX-1] = '\0'; // (TODO LATER) if bypassvalue << PATH_MAX, we loose a lot of space. maybe check strlen(bypassvalue) and append there a \0
@@ -59,7 +60,6 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
   // input from user for the name
   char *fileName = malloc(BUFFER_SIZE);
   if (!bypass) { // if we don't bypass. (if -n or --note weren't set.)
-    initscr();
     echo();
     keypad(stdscr, FALSE);
     clear();
@@ -70,6 +70,9 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
     wgetnstr(stdscr, fileName, BUFFER_SIZE-4); //limits the buffer to prevent overflow (-4 to account indexing and from ".md" in case we need to add it later)
     refresh();
     endwin();
+    reset_shell_mode();
+    fflush(stdout);
+    fflush(stderr);
   } else { // bypasses user input if we bypass is set to 1
     strncpy(fileName, bypassvalue, BUFFER_SIZE-1); // (TODO LATER) Maybe add a warning if string is too big. It gets truncated
     fileName[BUFFER_SIZE-1] = '\0';
@@ -146,7 +149,6 @@ char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, siz
     int highlight = 0; //curently highlighted option
     int key;
 
-    initscr(); //initialize ncurses
     cbreak();               // disable line buffering
     noecho();               // don't echo key presses
     keypad(stdscr, TRUE);   // enable arrow keys 

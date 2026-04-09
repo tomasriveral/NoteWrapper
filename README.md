@@ -106,6 +106,8 @@ Change `~/.config/notewrapper/config.json`. If it does not exist. On building, i
 - [x] Port vivify.vim to nixpkgs
 - [ ] Add a way to have vaults in different directories
 - [ ] some kind of FZF search for notes
+- [ ] A button to randomly select a note or an entry in a journal
+- [x] Fix crash when the window is resized
 - [x] Actually open vivify when opening nvim
 - [x] Write the journaling code (separate files or one big journal files)
 - [x] Adapt createNewNote with journals

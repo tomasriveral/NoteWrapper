@@ -267,6 +267,8 @@ int main(int argc, char *argv[]) {
     if (doesBackup) { // (TODO LATER) when implementing multiple directories for vault we should verifiy this works.
       handleBackups(notesDirectoryString, pathToBackup, homedir, interval, shouldDebug);
     }
+    
+    initscr(); //initialize ncurses
 
     int shouldExit = 0;
     while(!shouldExit) {
