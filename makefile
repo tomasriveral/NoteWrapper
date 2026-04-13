@@ -1,52 +1,22 @@
-# Configuration
-CONFIG_DIR := $(HOME)/.config/notewrapper
-CONFIG_FILE := $(CONFIG_DIR)/config.json
-CACHE_DIR := $(HOME)/.cache/notewrapper
-
-# Compiler and flags
 CC := gcc
-CFLAGS := -Wall -O2 `pkg-config --cflags libcjson ncurses`
-LDFLAGS := `pkg-config --libs libcjson ncurses`
-DEBUG ?= 0
 
-ifeq ($(DEBUG),1)
-    CFLAGS += -g
-endif
+CFLAGS := -Wall -Wextra -O2 \
+	$(shell pkg-config --cflags libcjson ncurses)
 
-# Sources and target
-SRC_DIR := src
-SRC := $(SRC_DIR)/main.c $(SRC_DIR)/ui.c $(SRC_DIR)/utils.c $(SRC_DIR)/notes.c
+LDFLAGS := $(shell pkg-config --libs libcjson ncurses)
+
+SRC := src/main.c src/ui.c src/utils.c src/notes.c
 TARGET := notewrapper
 
-# Phony targets
-.PHONY: all clean run install_config create_cache_dir
+.PHONY: all run clean
 
-# Default target
-all: install_config create_cache_dir $(TARGET)
+all: $(TARGET)
 
-# Build target
-$(TARGET): $(SRC)
-	@$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
-	@echo "Built $(TARGET) successfully."
+$(TARGET):
+	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LDFLAGS)
 
-# Run program
 run: $(TARGET)
-	@./$(TARGET)
+	./$(TARGET)
 
-# Clean build artifacts
 clean:
-	@rm -f $(TARGET)
-	@echo "Cleaned $(TARGET)."
-
-# Install default config if it does not exist
-install_config:
-	@mkdir -p $(CONFIG_DIR)
-	@if [ ! -f $(CONFIG_FILE) ]; then \
-		cp ./config.json $(CONFIG_FILE); \
-		echo "config.json installed to $(CONFIG_FILE)"; \
-	else \
-		echo "$(CONFIG_FILE) already exists, skipping installing default config file"; \
-	fi
-# creates a dir in ~/.cache/ which is used to store data, such as time of last backup
-create_cache_dir:
-	@mkdir -p $(CACHE_DIR)
+	rm -f $(TARGET)

@@ -8,16 +8,13 @@ The goal was a terminal-based interface for accessing vaults and notes using sta
 ### How to install
 1. Have installed `ncurses`, `cjson`, `make`, `Vivify`, `rsync` and `pkg-config`. <TODO LATER we should put hyprlinks to each program.>
 2. Have a supported editor: `vim`, `neovim` and `nano` (for the moment)
-3. Clone the repository.
+3. Clone the repository and enter it.
 ```shell
 git clone https://github.com/Totorile1/NoteWrapper.git
-```
-4. Compile the project. If you are on NixOS and have direnv installed, run `direnv allow`. It will create the nix-shell which will get all the necessary build-time libraries.
-```
 cd NoteWrapper
-make
 ```
-5. [configure](#configuration) `./config.json`
+4. Compile the project. On NixOS run `nix-build`. Other OS, run `make`.
+5. [configure](#configuration) `./config.json` (the file is created on launching, if it already doesn't exist).
 6. run the binary `notewrapper`
 
 ### Usage
@@ -56,7 +53,7 @@ The first two features depend on [Vivify's plugin for editors](https://github.co
 | Nano    | ❌         | ❌     | ✅          | |
 
 ### Configuration
-Change `~/.config/notewrapper/config.json`. If it does not exist. On building, it should copy a default config.
+Change `~/.config/notewrapper/config.json`. If it does not exist, the program should create on launch.
 
 ```json
 {

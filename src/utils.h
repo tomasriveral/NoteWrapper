@@ -54,6 +54,8 @@ void _error(const int shouldDebug, const int condition, const char *type, const 
 // Returns 0 if the string is not in the array.
 // If you want to only check the first n elements of the array, pass n as len.
 int isStringInArray(const char *string, const char **array, const int len);
+// initialize the cache directory and creates (if it doesn't already exists) the config file
+void initAppFilesAndDirs(const char *home, const int shouldDebug);
 // returns 1 if the string is in the file.
 // returns 0 if the string is not in the file.
 int isStringInFile(const char *path, const char *string, const int shouldDebug);

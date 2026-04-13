@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
  
+    initAppFilesAndDirs(homedir, shouldDebug);
     //---------------------------------------------------------------------------------------------
     //---------------------------------------------------------------------------------------------    
     // this part handles the config.json file
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) {
     }
     // check if the config file exists
     struct stat st = {0};
-    error(stat(configPath, &st) == -1, "program", "The config file %s does not exist.\nMaybe try the default path to the config ~/.config/notewrapper/config.json\nOr if you used the flag -c or --config, verifiy that you point to the correct file.\nIf it still does not work, compiling the program with make should create a valid config file in ~/.config/notewrapper.", configPath); // if the config directory does not exist
+    error(stat(configPath, &st) == -1, "user", "The config file %s does not exist.\nMaybe try the default path to the config ~/.config/notewrapper/config.json\nOr if you used the flag -c or --config, verifiy that you point to the correct file.", configPath); // if the config directory does not exist
 
     // opens config.json
     FILE *f = fopen(configPath, "r");

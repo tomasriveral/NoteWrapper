@@ -91,6 +91,60 @@ void copyDir(const char *source, const char *destination, const int shouldDebug)
         debug("Backup started asynchronously with PID %d\n", pid);
     }
 }
+
+static void ensureDir(const char *path, const int shouldDebug) {
+    struct stat st = {0};
+
+    if (stat(path, &st) == -1) {
+        debug("Creating the directory %s.", path);
+        error(mkdir(path, 0700) != 0, "program", "mkdir failed");
+    }
+}
+
+void initAppFilesAndDirs(const char *home, const int shouldDebug) {
+    char config_dir[512];
+    char cache_dir[512];
+
+    snprintf(config_dir, sizeof(config_dir),
+             "%s/.config/notewrapper", home);
+
+    snprintf(cache_dir, sizeof(cache_dir),
+             "%s/.cache/notewrapper", home);
+
+    ensureDir(config_dir, shouldDebug);
+    ensureDir(cache_dir, shouldDebug);
+
+    char config_file[512];
+    snprintf(config_file, sizeof(config_file),
+             "%s/config.json", config_dir);
+
+    FILE *f = fopen(config_file, "r");
+    if (f) {
+        fclose(f);
+        return;
+    }
+    debug("Creating default config file.");
+    FILE *w = fopen(config_file, "w");
+    error(!w, "program", "fopen failed opening %s");
+    fprintf(w,
+"{\n"
+"  \"directory\": \"~/Documents/Notes/\",\n"
+"  \"render\": true,\n"
+"  \"jumpToEndOfFileOnLaunch\": true,\n"
+"  \"editor\": \"neovim\",\n"
+"  \"journalRegex\": \".*journal.*\",\n"
+"  \"dateEntry\": \"# %%Y %%m %%d %%a\",\n"
+"  \"newLineOnOpening\": true,\n"
+"  \"backup\": {\n"
+"    \"enable\": false,\n"
+"    \"directory\": \"/path/to/backup\",\n"
+"    \"interval\": \"weekly\"\n"
+"  }\n"
+"}\n");
+
+    fclose(w);
+}
+
 void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const int shouldDebug) {
     int shouldBackup = 0;
     time_t now = time(NULL);
