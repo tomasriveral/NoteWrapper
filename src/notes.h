@@ -10,7 +10,7 @@ char **getJournalsFromVault(char *pathToVault, char *vault, char *journalRegex, 
 // journalRegex is the regex code for the journals. If a note matches this code, it is treated as a journal and it is not outputed from this function.
 char **getNotesFromVault(char *pathToVault, char *vault, char *journalRegex, int *count, int shouldDebug);
 // this function is inputed a path to a directory (which comes usually from the config file) and outpus all the suitable directories (so not the hidden ones) which will serve as separate vaults for notes.
-char **getVaultsFromDirectory(char *dirString, size_t *count, int shouldDebug);
+char **getVaultsFromDirectory(char *dirString, int *count, int shouldDebug);
 // path is the path to the file.
 // journal is the name of the file.
 // handles both type of journal (divided and unified).

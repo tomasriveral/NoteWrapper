@@ -36,5 +36,5 @@ middleText (usally \n) is printed between options and extraOptions.
 bottomText is printed bellow. 
 topText and middle must be exactly one line. If you want empty lines use " " and not "". 
 returns the selected option. */ 
-char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, size_t extraOptionsNumber, char *bottomText, char *middleText, char *topText, int debug);
+char* ncursesSelect(char **options, char *optionsText, int optionsNumber, int extraOptionsNumber, char *bottomText, char *middleText, char *topText, int debug);
 #endif

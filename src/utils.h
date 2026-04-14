@@ -17,6 +17,7 @@
 #include <regex.h>
 #include <errno.h> 
 #include <time.h>
+#include <ftw.h>
 #define BUFFER_SIZE 256 //standard buffer size.
 // the three supported values are "daily" "weekly" and "monthly" (for months we use the avarage lenght of a month in a non leap year). All values were calculated on my loyal TI-30 ECO RS
 #define DAILY 86400
@@ -65,7 +66,7 @@ void appendToFile(const char *path, const char *string, const int shouldDebug);
 void sanitize(char *string);
 //from https://stackoverflow.com/a/5467788.
 //deletes an entire directory. Use with parsimony and carefullness.
-int rmrf(char *path);
+int rmrf(char *path, int shouldDebug);
 // Inputs are the path to the file, the editor to open and some rendering option.
 // render: if we render the .md file with Vivify.
 // shouldJumpToEndOfFile: if we put the cursor at the end of the file when opening.

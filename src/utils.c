@@ -102,8 +102,8 @@ static void ensureDir(const char *path, const int shouldDebug) {
 }
 
 void initAppFilesAndDirs(const char *home, const int shouldDebug) {
-    char config_dir[512];
-    char cache_dir[512];
+    char config_dir[PATH_MAX];
+    char cache_dir[PATH_MAX];
 
     snprintf(config_dir, sizeof(config_dir),
              "%s/.config/notewrapper", home);
@@ -114,9 +114,8 @@ void initAppFilesAndDirs(const char *home, const int shouldDebug) {
     ensureDir(config_dir, shouldDebug);
     ensureDir(cache_dir, shouldDebug);
 
-    char config_file[512];
-    snprintf(config_file, sizeof(config_file),
-             "%s/config.json", config_dir);
+    char config_file[PATH_MAX+12];
+    snprintf(config_file, sizeof(config_file), "%s/config.json", config_dir);
 
     FILE *f = fopen(config_file, "r");
     if (f) {
@@ -288,7 +287,7 @@ void appendToFile(const char *path, const char *string, const int shouldDebug) {
 }
 
 void sanitize(char *string) {
-  for (int i = 0; i < strlen(string); i++) {
+  for (size_t i = 0; i < strlen(string); i++) {
     if ((!isalnum((unsigned char)string[i]) && strchr("/\\:*?\"\'<>\n\r\t", string[i])) || ((i == 0 || i == 1) && string[i] == '.')) { // replace unwanted chars by '_'. '.' is replaced if it is only the first two chars
                                                                                                                     // (TODO LATER fixe case where it "*.*", "..." and so on
         string[i] = '_';
@@ -302,15 +301,19 @@ void sanitize(char *string) {
 // so it walks the file tree and deletes it's content before removing the directory
 // (TODO LATER) this seems safe, but it's maybe a good idea to add some checks to not remove something it should not remove
 int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+  (void)sb;
+  (void)typeflag;
+  (void)ftwbuf;
+
   int shouldDebug = 1; //normally shouldDebug should be passed to the function. However, it's to difficult here and the best it to set it to 1.
   int rv = remove(fpath);
   error(rv, "program", "remove() failed to delete %s", fpath);
   return rv;
 }
 
-int rmrf(char *path) {
-  // (TODO LATER) Check if it not a root directory or something like this 
-    return nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+int rmrf(char *path, int shouldDebug) {
+  error(strcmp(path, "/") == 0, "program", "Refusing to delete root directory");
+  return nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
 }
 
 

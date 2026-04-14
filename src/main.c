@@ -54,14 +54,17 @@ int main(int argc, char *argv[]) {
     // loads and read the config file
     //gets the size
     fseek(f, 0, SEEK_END);
-    long size = ftell(f);
+    size_t size = ftell(f);
     rewind(f);
     //gets the data
     char *data = malloc(size+1);
     error(!data, "program", "malloc failed allocating memory for the variable data.");
     size_t readBytes = fread(data, 1, size, f); // 1 --> size of each item
     
-    if (readBytes!=size) {free(data);fclose(f);}
+    if (readBytes!=size) {
+      free(data);
+      fclose(f);
+    }
     error(readBytes!=size, "program", "Failed to read config file (%s) (%zu bytes read, expected %ld)", configPath, readBytes, size);
     data[size] = '\0';
     fclose(f);
@@ -277,7 +280,7 @@ int main(int argc, char *argv[]) {
       // select a vault
       char *vaultSelected = NULL;
 
-      size_t vaultsCount = 0;
+      int vaultsCount = 0;
       char **vaultsArray = getVaultsFromDirectory(notesDirectoryString, &vaultsCount, shouldDebug);
 
       // bypass if -v or --vault is set
@@ -298,7 +301,7 @@ int main(int argc, char *argv[]) {
       qsort(vaultsArray, vaultsCount, sizeof(const char *), compareString); // sorts the vaults alphabetically
       debug("Available vaults");
       if (shouldDebug) {
-        for (size_t i = 0; i < vaultsCount; i++) {
+        for (int i = 0; i < vaultsCount; i++) {
           altDebug("%s\n", vaultsArray[i]);
         }
         altDebug("└ ------------------------------\n");
@@ -344,7 +347,7 @@ note_selection:
           filesCount = filesCount + journalCount;
           debug("Available notes and journals:");
           if (shouldDebug) {
-            for (size_t i = 0; i < filesCount; i++) {
+            for (int i = 0; i < filesCount; i++) {
               altDebug("%s\n", filesArray[i]);
             }
             altDebug("└------------------------------\n");
@@ -413,7 +416,7 @@ note_creation:
               char pathToRMRF[PATH_MAX];
               sprintf(pathToRMRF, "%s/%s", notesDirectoryString, vaultSelected);
               debug("Removed the directory: %s", pathToRMRF);
-              rmrf(pathToRMRF);
+              rmrf(pathToRMRF, shouldDebug);
               shouldChangeVault = 1;
             }
           } else if (strcmp(noteSelected,"Quit (Ctrl+C)") == 0) {

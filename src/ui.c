@@ -145,7 +145,7 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
   return fileName;
 }
 
-char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, size_t extraOptionsNumber, char *bottomText, char *middleText, char *topText, int shouldDebug) {
+char* ncursesSelect(char **options, char *optionsText, int optionsNumber, int extraOptionsNumber, char *bottomText, char *middleText, char *topText, int shouldDebug) {
     int highlight = 0; //curently highlighted option
     int key;
 
@@ -221,5 +221,7 @@ char* ncursesSelect(char **options, char *optionsText, size_t optionsNumber, siz
     }
     end_loop:
     endwin(); // end ncurses mode
+    fflush(stderr);
+    debug("Selected option: %s", options[highlight]);
     return options[highlight];
 }

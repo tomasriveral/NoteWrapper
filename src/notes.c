@@ -10,7 +10,7 @@ char **getJournalsFromVault(char *pathToVault, char *vault, char *journalRegex, 
     DIR *vaultDirectory = opendir(tempPath);
     error(vaultDirectory==NULL, "program", "Could not open directory %s", tempPath);
     char **journalsArray = NULL; // will contain all the notes
-    size_t journalsCount = 0; // we need to count how many notes there is to always readjust how many memory we alloc
+    int journalsCount = 0; // we need to count how many notes there is to always readjust how many memory we alloc
     
     // https://stackoverflow.com/a/1085120 for regex code
     regex_t regex;
@@ -57,7 +57,7 @@ char** getNotesFromVault(char *pathToVault, char *vault, char *journalRegex, int
     DIR *vaultDirectory = opendir(tempPath);
     error(vaultDirectory==NULL, "program", "Could not open directory %s", tempPath);
     char **notesArray = NULL; // will contain all the notes
-    size_t notesCount = 0; // we need to count how many notes there is to always readjust how many memory we alloc
+    int notesCount = 0; // we need to count how many notes there is to always readjust how many memory we alloc
     // Refer https://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
     // for readdir()
     debug("┌------------------------------\nDetected Files and dirs from the vault:");
@@ -91,7 +91,7 @@ char** getNotesFromVault(char *pathToVault, char *vault, char *journalRegex, int
     return notesArray;
 }
 
-char **getVaultsFromDirectory(char *dirString, size_t *count, int shouldDebug) { 
+char **getVaultsFromDirectory(char *dirString, int *count, int shouldDebug) { 
     // (TODO LATER) it might be a good idea to check if these directories exist
     // (TODO LATER) expand ~ as it does not work with opendir()
     // this function is inputed a path to a directory (which comes usually from the config file) and outpus all the suitable directories (so not the hidden ones) which will serve as separate vaults for notes
@@ -101,7 +101,7 @@ char **getVaultsFromDirectory(char *dirString, size_t *count, int shouldDebug) {
     DIR *vaultsDirectory = opendir(dirString);
     error(vaultsDirectory==NULL, "program", "Could not open directory %s", dirString);
     char **dirsArray = NULL; // will contain all the dirs/vaults
-    size_t dirsCount = 0; // we need to count how many dirs there is to always readjust how many memory we alloc
+    int dirsCount = 0; // we need to count how many dirs there is to always readjust how many memory we alloc
     // Refer https://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
     // for readdir()
     debug("┌------------------------------\n Detected files and dirs from the directory:");
@@ -166,7 +166,7 @@ char *updateJournal(char *path, char *journal, char *timeFormat, int shouldDebug
       snprintf(createEntryMessage, PATH_MAX, "Create new entry for the journal %s", journal);
       entryArray[0] = createEntryMessage;
       entryArray[1] = "Open random entry";
-      size_t entryCount = extraOptions; // we need to count how many dirs there is to always readjust how many memory we alloc
+      int entryCount = extraOptions; // we need to count how many dirs there is to always readjust how many memory we alloc
       // Refer https://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
       // for readdir()
       debug("┌------------------------------\n Detected files and dirs from %s:", path);
