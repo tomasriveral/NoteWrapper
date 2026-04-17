@@ -1,8 +1,7 @@
 #include "ui.h"
+#include <stdio.h>
 
 void createNewVault(char *dirToVault, int bypass, char *bypassvalue, int shouldDebug) {
-  // (TODO LATER) warn if it matches the regex for the journal
-  //(TODO LATER) add a way to go back to vault selection
   int duplicateWarning = 0; // set to 1 later if the vault you tried to create already existed
 input_screen:
   char *vaultName = malloc(PATH_MAX);
@@ -33,7 +32,7 @@ input_screen:
     fflush(stderr);
   } else {
     strncpy(vaultName, bypassvalue, PATH_MAX -2); // -2 (and later -1) because indexing
-    vaultName[PATH_MAX-1] = '\0'; // (TODO LATER) if bypassvalue << PATH_MAX, we loose a lot of space. maybe check strlen(bypassvalue) and append there a \0
+    vaultName[PATH_MAX-1] = '\0';
   }
   error(strcmp(vaultName, "") == 0, "user", "vaultName is empty"); // (TODO LATER) replace that with a warning
   debug("Inputed vaultName=%s", vaultName);
@@ -51,12 +50,9 @@ input_screen:
     goto input_screen;
   }
   free(vaultName);
-// (TODO LATER) after creating we should automatically select this vault
 }
 
 char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, char *bypassvalue, char *journalRegex, int shouldDebug) {
-  // (TODO LATER) Add code to create journal
-  // (TODO LATER) Add check. If the user creates a note with a name that already exists. it erases the old one
   // input from user for the name
   char *fileName = malloc(BUFFER_SIZE);
   if (!bypass) { // if we don't bypass. (if -n or --note weren't set.)
@@ -74,15 +70,19 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
     fflush(stdout);
     fflush(stderr);
   } else { // bypasses user input if we bypass is set to 1
-    strncpy(fileName, bypassvalue, BUFFER_SIZE-1); // (TODO LATER) Maybe add a warning if string is too big. It gets truncated
+    strncpy(fileName, bypassvalue, BUFFER_SIZE);
     fileName[BUFFER_SIZE-1] = '\0';
   }
-  // (TODO LATER) add a way to go back to note selection
   error(strcmp(fileName, "") == 0, "user", "fileName is empty"); // replace this with a warning and add a warning if duplicate file and handle case where multiple warnings (if such case is possible)
   // check/sanitize the input
   debug("Inputed fileName=%s", fileName);
   sanitize(fileName);
   debug("Sanitized fileName=%s (We might append .md later", fileName);
+  // we trow an error if the file already exists (previous behaviour was overwriting the file)
+  char path[PATH_MAX];
+  snprintf(path, PATH_MAX, "%s/%s/%s", dirToVault, vaultFromDir, fileName);
+  struct stat st;
+  error(stat(path, &st) == 0, "user", "%s already exists", fileName);
   // if it matches with the journalRegex we treat it as a journal instead of a note
   regex_t regex;
   int regexReturn = regcomp(&regex, journalRegex, 0);
@@ -95,7 +95,7 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
                                                        // we will open it as a journal
   if (!regexReturn) {
     debug("%s matches with %s treating it as a journal", fileName, journalRegex);
-    char **options = malloc(32); // the number of bytes is exactly what in the two strings // (TODO LATER) There might be a cleaner way
+    char **options = malloc(32); // the number of bytes is exactly what in the two strings
     options[0] = "Divided journal";
     options[1] = "Unified journal";
     char *optionSelected = ncursesSelect(options, "Select which type of journal you want to create  (Use arrows or WASD, Enter to select):", 2, 0, "", "", " ", shouldDebug);
@@ -112,16 +112,20 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
       free(fileFullPath);
     } else { // if it is a unified journal
       char *fileFullPath = malloc(PATH_MAX);
-      // we must add .md if it doesn't have // (TODO LATER) add a warning to the journalRegex. It must match with fileName and fileName + ".md" in case we append the extension
-      int len = strlen(fileName);
-      if (fileName[len-3] != '.' || fileName[len-2] != 'm' || fileName[len-1] != 'd') { // there might be a cleaner way to do this
-        strncat(fileName, ".md", PATH_MAX);
-      }
       snprintf(fileFullPath, PATH_MAX, "%s/%s/%s", dirToVault, vaultFromDir, fileName);
+      int len = strlen(fileFullPath);
+      if (fileFullPath[len-3] != '.' || fileFullPath[len-2] != 'm' || fileFullPath[len-1] != 'd') { // there might be a cleaner way to do this
+        error(len > PATH_MAX - 3, "user", "%s is too big (greater than PATH_MAX-3) and we can't append .md", fileFullPath);
+        strncat(fileFullPath, ".md", PATH_MAX);
+        // we checked before if fileName didn't already exist.
+        // we must redo it as we add a .mode
+        struct stat st;
+        error(stat(fileFullPath, &st) == 0, "user", "%s already exists", fileFullPath);
+      }
       FILE *filePointer;
-      filePointer = fopen(fileFullPath, "w"); // creates and opens the file (TODO LATER) Maybe check if the file really doesn't exist
+      filePointer = fopen(fileFullPath, "w"); // creates and opens the file
       error(filePointer == NULL, "program", "The %s couldn't be created.", fileFullPath);
-      fprintf(filePointer, "### %s\n", fileName); //(TODO LATER) Add a way to configure default behaviour when creating a file
+      fprintf(filePointer, "### %s\n", fileName);
       fclose(filePointer); // closes the file so that nvim could open it
       free(fileFullPath);
     }
@@ -136,9 +140,9 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
     char *fileFullPath = malloc(PATH_MAX); // this dinamically allocated because we use it in the main function to call openEditor
     sprintf(fileFullPath, "%s/%s/%s", dirToVault, vaultFromDir, fileName);
     FILE *filePointer;
-    filePointer = fopen(fileFullPath, "w"); // creates and opens the file (TODO LATER) Maybe check if the file really doesn't exist
+    filePointer = fopen(fileFullPath, "w"); // creates and opens the file
     error(filePointer == NULL, "program", "The %s couldn't be created.", fileFullPath);
-    fprintf(filePointer, "### %s\n", fileName); //(TODO LATER) Add a way to configure default behaviour when creating a file
+    fprintf(filePointer, "### %s\n", fileName);
     fclose(filePointer); // closes the file so that nvim could open it
     free(fileFullPath);
   }
@@ -261,7 +265,7 @@ char* ncursesSelect(char **options, char *optionsText, int optionsNumber, int ex
     keypad(stdscr, TRUE);   // enable arrow keys 
     start_color();
     curs_set(0); // sets the cursor to invisible. (We will emulate the cursor with a hightlight that go up and down).
-    use_default_colors(); //(TODO LATER) customize these colors in the config file
+    use_default_colors();
     init_pair(1, COLOR_WHITE, -1); // color for optionsNumber (so notes, vaults, etc.)
     init_pair(2, COLOR_BLUE, -1); // color for extraOptionsNumber (so settings, delete notes, create vault, etc.)
     while (1) {

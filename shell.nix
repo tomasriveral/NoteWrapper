@@ -6,5 +6,6 @@ pkgs.mkShell {
     pkgs.ncurses
     pkgs.pkg-config
     pkgs.gdb
+    pkgs.valgrind
   ];
 }

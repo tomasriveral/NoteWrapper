@@ -5,3 +5,4 @@ nw
 error.log
 output.log
 result
+massif.out.*
