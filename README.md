@@ -67,7 +67,8 @@ Change `~/.config/notewrapper/config.json`. If it does not exist, the program sh
   "backup": {
     "enable": false,
     "directory": "/path/to/backup",
-    "interval": "weekly"
+    "interval": "weekly",
+    "rsyncArgs": ["-Lqah", "--update"]
   }
 }
 ```
@@ -90,7 +91,7 @@ Change `~/.config/notewrapper/config.json`. If it does not exist, the program sh
 `backup.directory` is the directory where the backup will go.
 
 `backup.interval` can either be `daily`, `weekly`, `monthly` or an integer. It specifies the interval between two backups.
-
+`rsyncArgs` are the array of arguments that will be passed into rsync. See `man rsync` or `rsync --help`.
 
 
 ### What needs to be done (a lot)

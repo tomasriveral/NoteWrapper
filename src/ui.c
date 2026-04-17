@@ -24,7 +24,7 @@ input_screen:
       attroff(COLOR_PAIR(2));
     }
     move(1, 1); // replace cursor 
-    wgetnstr(stdscr, vaultName, sizeof(vaultName)-1);
+    wgetnstr(stdscr, vaultName, PATH_MAX-1);
     refresh();
     endwin();
     reset_shell_mode();

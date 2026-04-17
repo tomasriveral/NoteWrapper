@@ -70,7 +70,7 @@ void _error(const int shouldDebug, const int condition, const char *type, const 
   }
 }
 
-void copyDir(const char *source, const char *destination, const int shouldDebug) {
+static void copyDir(const char *source, const char *destination, const char **rsyncArgs, const int rsyncArgsNumber, const int shouldDebug) {
     debug("Backuping... source: %s and destination: %s", source, destination);
     pid_t pid = fork();
     
@@ -78,16 +78,16 @@ void copyDir(const char *source, const char *destination, const int shouldDebug)
 
     if (pid == 0) {
         // Child process: execute rsync
-        char *args[] = { // (TODO LATER)
-            "rsync",
-            "-Lqah",       // archive, follow links, human-readable // (TODO LATER) add a way to get verbose (-v) without it going on top of ncurses
-            "--progress",  // show progress
-            "--update",    // only update if newer
-            (char *)source,
-            (char *)destination,
-            NULL
-        };
-
+        char **args = malloc((4 + rsyncArgsNumber)*sizeof(char*));
+        args[0] = "rsync";
+        for (int i = 0; i < rsyncArgsNumber; i++) {
+          args[i+1] = (char *)rsyncArgs[i];
+          if (i == rsyncArgsNumber-1) { // last loop
+            args[i+2] = (char*)source;
+            args[i+3] = (char*)destination;
+            args[i+4] = NULL; // execvp expect last arg to be NULL
+          }
+        }
         execvp("rsync", args);
         // If execvp returns, there was an error
         error(1, "program", "execvp() failed");
@@ -141,14 +141,15 @@ void initAppFilesAndDirs(const char *home, const int shouldDebug) {
 "  \"backup\": {\n"
 "    \"enable\": false,\n"
 "    \"directory\": \"/path/to/backup\",\n"
-"    \"interval\": \"weekly\"\n"
+"    \"interval\": \"weekly\",\n"
+"    \"rsyncArgs\": [\"-Lqah\", \"--update\"]\n"
 "  }\n"
 "}\n");
 
     fclose(w);
 }
 
-void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const int shouldDebug) {
+void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const char **rsyncArguments, const int rsyncArgumentsNumber, const int shouldDebug) {
     int shouldBackup = 0;
     time_t now = time(NULL);
     debug("Time since epoch is %ld", (long)now);
@@ -194,7 +195,7 @@ void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const cha
     }
 
     if (shouldBackup) {
-        copyDir(pathOfVaults, pathOfBackup, shouldDebug);
+        copyDir(pathOfVaults, pathOfBackup, rsyncArguments, rsyncArgumentsNumber, shouldDebug);
     }
 }
 

@@ -76,6 +76,7 @@ int openEditor(char *path, char *editor, int render, int shouldJumpToEndOfFile, 
 // you should not forgot to free this string as it is in the heap.
 char *getFormatedTime(char *format, int shouldDebug);
 /* Caclulates if we need to do another backup (by reading ~/.cache/NoteWrapper/backupTime.txt.
-If need launches in the background rsync to do the backuping.*/
-void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const int shouldDebug);
+If need launches in the background rsync to do the backuping.
+rsyncArgs is the array of arguments to be passed to rsync. Do not inclue destination or source. It will be added in the function.*/
+void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const char *homeDir, const int interval, const char **rsyncArgs, const int rsyncArgsNumber,  const int shouldDebug);
 #endif

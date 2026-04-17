@@ -1,6 +1,8 @@
+#include "cjson/cJSON.h"
 #include "ui.h"
 #include "utils.h"
 #include "notes.h"
+#include <stdlib.h>
 
 int main(int argc, char *argv[]) {
     int shouldDebug = 0;
@@ -177,12 +179,15 @@ arg_next:
     int doesBackup = 0;
     int interval = 0; // this is an int. But some times it will be inputed a string. We must translate it.
     char *pathToBackup = malloc(PATH_MAX);
+    char **rsyncArgs = NULL;
+    int rsyncArgsNumber = 0;
     cJSON *backupJSON = cJSON_GetObjectItem(json, "backup");
     if (backupJSON && cJSON_IsObject(backupJSON)) {
       cJSON *doesBackupJSON = cJSON_GetObjectItem(backupJSON, "enable");
       if (doesBackupJSON && cJSON_IsBool(doesBackupJSON)) {
         doesBackup = cJSON_IsTrue(doesBackupJSON) ? 1 : 0;
         debug("doesBackup is set to %d", doesBackup);
+        // handles the path to the backup
         cJSON *pathToBackupJSON = cJSON_GetObjectItem(backupJSON, "directory");
         if (pathToBackupJSON && cJSON_IsString(pathToBackupJSON)) {
           char *temp = cJSON_GetStringValue(pathToBackupJSON); // we name it temp. As we can't directly set pathToBackup because snprintf doesn't like when a pointer is both an arg and the destination // temp should be freed when free(json), because cJSON_GetStringValue returns a pointer.
@@ -192,30 +197,46 @@ arg_next:
             debug("~ was expanded to %s\nThe backup path is %s", homedir, pathToBackup);
           } else {
             pathToBackup = strndup(temp, PATH_MAX); // temp will be freed later so strndup
-            debug("Directory for backup is set to %s in config.json", pathToBackup);
+            debug("Directory for backup is set to %s in %s", pathToBackup, configPath);
           }
-        } else {error(1, "user", "config.json did not contained a directory inside the backup section or the value is from an unexpected type");}
+        } else {error(1, "user", "%s did not contained a directory inside the backup section or the value is from an unexpected type", configPath);}
+        // handles the interval of backup
         cJSON *intervalJSON = cJSON_GetObjectItem(backupJSON, "interval");
         if (intervalJSON && cJSON_IsString(intervalJSON)) {
           char *temp = cJSON_GetStringValue(intervalJSON); // se comment higher. temp will be freed when calling free(json)
           if (strcmp(temp, "daily") == 0) { 
             interval = DAILY;
-            debug("interval in config.json is set to \"daily\" which is %d", DAILY);
+            debug("interval in %s is set to \"daily\" which is %d", configPath, DAILY);
           } else if (strcmp(temp, "weekly") == 0) {
             interval = WEEKLY;
-            debug("interval in config.json is set to \"weekly\" which is %d", WEEKLY);
+            debug("interval in %s is set to \"weekly\" which is %d", configPath, WEEKLY);
           } else if (strcmp(temp, "monthly") == 0) {
             interval = MONTHLY;
-            debug("interval in config.json is set to \"monthly\" which is %d", MONTHLY);
-          } else {error(1, "user", "Unexpected string %s for entry \"interval\" in config.json. You must put an int (number of seconds) or \"daily\" or \"weekly\" or \"monthly\".", intervalJSON->valuestring);}
+            debug("interval in %s is set to \"monthly\" which is %d", configPath, MONTHLY);
+          } else {error(1, "user", "Unexpected string %s for entry \"interval\" in %s. You must put an int (number of seconds) or \"daily\" or \"weekly\" or \"monthly\".", intervalJSON->valuestring, configPath);}
         } else if (intervalJSON && cJSON_IsNumber(intervalJSON)) {
           interval = (int)cJSON_GetNumberValue(intervalJSON);
-          debug("interval in config.json is set to %d", interval);
-        } else {error(1, "user", "config.json did not contained an interval value inside the backup section or the value is from an unexpected type");}
-      } else{error(1, "user", "config.json did not contained a enable value inside the backup section or the value is from an unexpected type");}
+          debug("interval in %s is set to %d", configPath, interval);
+        } else {error(1, "user", "%s did not contained an interval value inside the backup section or the value is from an unexpected type", configPath);}
+      } else{error(1, "user", "%s did not contained a enable value inside the backup section or the value is from an unexpected type", configPath);}
+      // handle rsyncs array of arguments.
+      cJSON *rsyncArgsJSON = cJSON_GetObjectItem(backupJSON, "rsyncArgs");
+      if (rsyncArgsJSON && cJSON_IsArray(rsyncArgsJSON)) { // if it is what we expected
+        rsyncArgsNumber = cJSON_GetArraySize(rsyncArgsJSON);
+        rsyncArgs = realloc(rsyncArgs, (size_t)rsyncArgsNumber);
+        for (int i = 0; i < rsyncArgsNumber; i++) {
+          cJSON *argJSON = cJSON_GetArrayItem(rsyncArgsJSON, i);
+          if (argJSON && cJSON_IsString(argJSON)) {
+              rsyncArgs[i] = cJSON_GetStringValue(argJSON);
+          } else {error(1, "user", "One element in rsyncArgs array in %s is not a string", configPath);}
+        }
+      } else {error(1, "user", "%s did not contained a rsyncArgs array inside the backup section or the value is from an unexpected type", configPath);}
     } else {
       debug("In %s, \"backup\" wasn't set or we encountered a abnormal type. Defaulting to {\"enable\": false}.", configPath);
     }
+    
+    
+    
     //cleans up 
     cJSON_Delete(json);
     free(data);
@@ -402,7 +423,7 @@ next_arg:
     debug("Finished parsing the attribute flags");
 
     if (doesBackup) { // (TODO LATER) when implementing multiple directories for vault we should verifiy this works.
-      handleBackups(notesDirectoryString, pathToBackup, homedir, interval, shouldDebug);
+      handleBackups(notesDirectoryString, pathToBackup, homedir, interval, (const char**)rsyncArgs, rsyncArgsNumber, shouldDebug);
     }
     
     initscr(); //initialize ncurses

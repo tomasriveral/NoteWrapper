@@ -7,5 +7,6 @@ pkgs.mkShell {
     pkgs.pkg-config
     pkgs.gdb
     pkgs.valgrind
+    pkgs.kdePackages.kcachegrind
   ];
 }
