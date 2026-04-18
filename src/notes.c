@@ -129,8 +129,6 @@ char **getVaultsFromDirectory(char *dirString, int *count, int shouldDebug) {
 }
 
 char *updateJournal(char *path, char *journal, char *timeFormat, int shouldDebug) {
-  //(TODO LATER) Per journal format configuration
-  // (TODO LATER) with all the usage of PATH_MAX we should really calculate max inputed path or something like this
   path[PATH_MAX] = '\0'; // it assures it is a string (Most cases this does nothing). But rewriting at least one bytes make the compile happy. He doesn't want to return an unchanged input.
   debug("Handling the journal %s", path);
 
@@ -233,7 +231,6 @@ char *updateJournal(char *path, char *journal, char *timeFormat, int shouldDebug
         strncpy(path, temp, PATH_MAX);
         debug("Returning path to the selected entry: %s", path);
       }
-      // (TODO LATER) free all unused entryArray[i]
   } else {
     error(1, "program", "%s is not a file and not a directory.", path);
   }

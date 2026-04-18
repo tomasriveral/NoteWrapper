@@ -245,8 +245,6 @@ arg_next:
     //---------------------------------------------------------------------------------------------
     
     // flags and arguments overwrite the config
-    // (TODO LATER) maybe add a way to combine flags (such which rm -fr?)
-    // (TODO LATER) add a version flag
     debug("Parsing the attribute flags.\n This flags might overwrite the options in the config file.");
     // thoses bypasses are used if some specific flags are passed as args. This allows to bypass the TUI selectors
     int bypassSelectionVault = 0;
@@ -310,7 +308,7 @@ for (int i = 1; i < argc; i++) {
             return 0;
 
         } else if (strcmp(arg, "--version") == 0) {
-            printf("No released version yet...\n");
+            printf("NoteWrapper version 1.0\n");
             return 0;
 
         } else {
@@ -499,7 +497,6 @@ note_selection:
           }
           filesCount = filesCount + journalCount;
 
-          // we sort them // (TODO LATER) THis doesn't seem to sort them
           qsort(filesArray, filesCount, sizeof(const char *), compareString);
           debug("Available notes and journals:");
           if (shouldDebug) {
@@ -540,8 +537,8 @@ note_selection:
           if (strcmp(noteSelected, "Create new note") != 0 && strcmp(noteSelected,"Back to vault selection") != 0 && strcmp(noteSelected, "Delete vault") != 0 && strcmp(noteSelected,"Quit (Ctrl+C)") != 0) {
 open_note:
             bypassSelectionNote = 0; // we must reset bypassSelectionNote to avoid getting into an infinite loop of bypassing the note selection
-            char *fullPath = malloc(PATH_MAX); // (TODO LATER) Find a more appropriate and descriptive name for the variable
-            sprintf(fullPath, "%s/%s/%s", notesDirectoryString, vaultSelected, noteSelected); // (TODO LATER) change all sprintf to snprintf which checks for buffer size
+            char *fullPath = malloc(PATH_MAX);
+            snprintf(fullPath, PATH_MAX, "%s/%s/%s", notesDirectoryString, vaultSelected, noteSelected);
             // if it is a journal we must update it before
             regex_t regex;
             int regexReturn = regcomp(&regex, journalRegex, 0);
@@ -551,7 +548,7 @@ open_note:
               debug("%s is a journal. Updating it...", noteSelected);
               fullPath = updateJournal(fullPath, noteSelected, timeFormat, shouldDebug); // we return the path. As if it is a divided journal we must point to the correct entry
             }
-            if (newLineOnOpening) { //(TODO LATER) For some reason this does not applies to journals? --- it does but only if we don't create a new file/entry
+            if (newLineOnOpening) {//(TODO LATER) For some reason this does not applies to journals? --- it does but only if we don't create a new file/entry
               appendToFile(fullPath, "\n", shouldDebug);
             }
             openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
@@ -570,7 +567,7 @@ note_creation:
             if (strcmp(answer, "Yes.") == 0) {
               // delete the vault after confirmation by the user
               char pathToRMRF[PATH_MAX];
-              sprintf(pathToRMRF, "%s/%s", notesDirectoryString, vaultSelected);
+              snprintf(pathToRMRF, PATH_MAX, "%s/%s", notesDirectoryString, vaultSelected);
               debug("Removed the directory: %s", pathToRMRF);
               rmrf(pathToRMRF, shouldDebug);
               shouldChangeVault = 1;
