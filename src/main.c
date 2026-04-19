@@ -1,8 +1,6 @@
-#include "cjson/cJSON.h"
 #include "ui.h"
 #include "utils.h"
 #include "notes.h"
-#include <stdlib.h>
 
 int main(int argc, char *argv[]) {
     int shouldDebug = 0;
@@ -305,6 +303,19 @@ for (int i = 1; i < argc; i++) {
 
         } else if (strcmp(arg, "--help") == 0) {
             printf("Usage: notewrapper [options]\n");
+            printf("Options:\n");
+            printf("  -c, --config <path/to/config>               Specify the config file.\n");
+            printf("  -d, --directory <path/to/directory>         Specify the vaults' directory.\n");
+            printf("  -h, --help                                  Display this message.\n");
+            printf("  -e, --editor                                Specify the editor to open.\n");
+            printf("  -j, --jump                                  Jumps to the end of the file on opening.\n");
+            printf("  -J, --no-jump                               Do not jump to the end of the file\n");
+            printf("  -n, --note  <note's name>                   Specify the note (or journal).\n");
+            printf("  -r, --render                                Renders the note with Vivify.\n");
+            printf("  -R, --no-render                             Do not render.\n");
+            printf("  -v, --vault <vault's name>                  Specify the vault.\n");
+            printf("  --version                                   Display the program version and the GPL3 notice.\n");
+            printf("  -V, --verbose                               Show debug information.\n");
             return 0;
 
         } else if (strcmp(arg, "--version") == 0) {
@@ -350,6 +361,19 @@ for (int i = 1; i < argc; i++) {
 
                 case 'h':
                     printf("Usage: notewrapper [options]\n");
+                    printf("Options:\n");
+                    printf("  -c, --config <path/to/config>               Specify the config file.\n");
+                    printf("  -d, --directory <path/to/directory>         Specify the vaults' directory.\n");
+                    printf("  -h, --help                                  Display this message.\n");
+                    printf("  -e, --editor                                Specify the editor to open.\n");
+                    printf("  -j, --jump                                  Jumps to the end of the file on opening.\n");
+                    printf("  -J, --no-jump                               Do not jump to the end of the file\n");
+                    printf("  -n, --note  <note's name>                   Specify the note (or journal).\n");
+                    printf("  -r, --render                                Renders the note with Vivify.\n");
+                    printf("  -R, --no-render                             Do not render.\n");
+                    printf("  -v, --vault <vault's name>                  Specify the vault.\n");
+                    printf("  --version                                   Display the program version and the GPL3 notice.\n");
+                    printf("  -V, --verbose                               Show debug information.\n");
                     return 0;
 
                 // -------- flags with arguments (MUST be last in group) --------
