@@ -22,7 +22,7 @@ The goal was to create a terminal-based interface for accessing vaults and notes
 * Journal support with flexible entry formats
 * Real-time Markdown rendering via Vivify
 * Backup support using `rsync`
-* Supports multiple editors (vim, neovim, nano)
+* Supports multiple editors
 
 ---
 
@@ -42,9 +42,9 @@ Before building NoteWrapper, you must install the following dependencies:
 
 You must also have a [supported editor](#editor-support) installed:
 
-* `vim`
-* `neovim`
 * `nano`
+* `neovim`
+* `vim`
 
 ---
 
@@ -141,9 +141,9 @@ If your editor does not support these features, you can implement a plugin using
 
 | Editor | Bufferless | Cursor | Jump to end | Plugin required                                         |
 | ------ | ---------- | ------ | ----------- | ------------------------------------------------------- |
+| Nano   | ❌          | ❌      | ✅           | —                                                       |
 | Neovim | ✅          | ✅      | ✅           | [vivify-vim](https://github.com/jannis-baum/vivify.vim) |
 | Vim    | ✅          | ✅      | ✅           | [vivify-vim](https://github.com/jannis-baum/vivify.vim) |
-| Nano   | ❌          | ❌      | ✅           | —                                                       |
 
 [How to add support for another editor](./CONTRIBUTING.md#adding-editor-support)
 
