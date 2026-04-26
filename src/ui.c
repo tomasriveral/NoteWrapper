@@ -112,7 +112,7 @@ char *createNewNote(char dirToVault[PATH_MAX], char *vaultFromDir, int bypass, c
       snprintf(fileFullPath, PATH_MAX, "%s/%s/%s/", dirToVault, vaultFromDir, fileName);
       struct stat st = {0};
       if (stat(fileFullPath, &st) == -1) {
-        error(!mkdir(fileFullPath, 0744), "program", "mkdir failed");
+        error(mkdir(fileFullPath, 0744), "program", "mkdir failed");
       } else {
         error(1, "program", "%s could not be created", fileFullPath);
       }

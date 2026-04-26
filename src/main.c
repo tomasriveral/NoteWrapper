@@ -487,7 +487,6 @@ next_arg:
         }
       }
 
-      qsort(vaultsArray, vaultsCount, sizeof(const char *), compareString); // sorts the vaults alphabetically
       debug("┌--------------------------------\nAvailable vaults:");
       if (shouldDebug) {
         for (int i = 0; i < vaultsCount; i++) {
