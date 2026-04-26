@@ -138,7 +138,7 @@ void initAppFilesAndDirs(const char *home, const int shouldDebug) {
     error(!w, "program", "fopen failed opening %s");
     fprintf(w, //TODO CHANGE default json
 "{\n"
-"  \"directory\": \"~/Documents/Notes/\",\n"
+"  \"directory\": [\"~/Documents/Notes/\"],\n"
 "  \"render\": true,\n"
 "  \"jumpToEndOfFileOnLaunch\": true,\n"
 "  \"editor\": \"neovim\",\n"
