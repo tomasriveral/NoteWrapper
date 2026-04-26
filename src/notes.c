@@ -134,7 +134,7 @@ char **getVaultsFromDirectories(char **directoryStringArray, int directoryNumber
           altDebug(" is a vault\n");
           vaultsArray = realloc(vaultsArray, sizeof(vaultsArray) + sizeof(char *)); // resize vaultsArray
           vaultsPerDirectoryNumber[i]++; // it will be used later to know which vaults goes into which directory
-          directoryStringArray[nthVault] = strdup(entryName); // we use strdup and not strcpy, because memory used with opendir and readdir will be closed.
+          vaultsArray[nthVault] = strdup(entryName); // we use strdup and not strcpy, because memory used with opendir and readdir will be closed.
           nthVault++; // it is used immediatly to set the vault into directoryStringArray
         } else {
           altDebug(" is not a vault (not a dir.)\n");
