@@ -132,7 +132,7 @@ char **getVaultsFromDirectories(char **directoryStringArray, int directoryNumber
         struct stat metadataEntry;
         if (stat(tempFullEntryPath, &metadataEntry) == 0 && S_ISDIR(metadataEntry.st_mode)) { // get's the metadata (stat should return 0 if fails) and sees if it is a dir.
           altDebug(" is a vault\n");
-          vaultsArray = realloc(vaultsArray, sizeof(vaultsArray) + sizeof(char *)); // resize vaultsArray
+          vaultsArray = realloc(vaultsArray, + sizeof(char *)*(nthVault + 1)); // resize vaultsArray
           vaultsPerDirectoryNumber[i]++; // it will be used later to know which vaults goes into which directory
           vaultsArray[nthVault] = strdup(entryName); // we use strdup and not strcpy, because memory used with opendir and readdir will be closed.
           nthVault++; // it is used immediatly to set the vault into directoryStringArray
