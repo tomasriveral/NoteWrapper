@@ -2,6 +2,7 @@
 #include "ui.h"
 #include "utils.h"
 #include "notes.h"
+#include <stdio.h>
 
 int main(int argc, char *argv[]) {
     int shouldDebug = 0;
@@ -114,8 +115,16 @@ arg_next:
     int i = 0;
     cJSON_ArrayForEach(tempEntry, dirJson) { // iterate over all the elements of the array _i. e._ over all the dirs
       if (tempEntry && cJSON_IsString(tempEntry)) {
-        directoriesArray[i] = strdup(cJSON_GetStringValue(tempEntry));
-        altDebug("%s\n",directoriesArray[i]);
+        if (cJSON_GetStringValue(tempEntry)[0] == '~') { // we must expand ~
+          char *tempUnFixedName = cJSON_GetStringValue(tempEntry);
+          tempUnFixedName++; // shifts and removes the ~
+          directoriesArray[i] = malloc(PATH_MAX);
+          debug("~ in %s was expanded to %s", tempUnFixedName, homedir);
+          snprintf(directoriesArray[i], PATH_MAX, "%s/%s", homedir, tempUnFixedName);
+        } else {
+          directoriesArray[i] = strdup(cJSON_GetStringValue(tempEntry));
+          altDebug("%s\n",directoriesArray[i]);
+        }
       } else {
         error(1, "user", "In %s, in \"directory\", invalid type of one of the entries.", configPath);
       }
