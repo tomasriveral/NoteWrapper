@@ -67,6 +67,15 @@ To add support for a new editor, you must update both documentation and source c
 
 ---
 
+## Changing default configuration
+
+If you want to change the default configuration or add a new option:
+1. Update [README's documentation](./README.md#configuration)
+2. In `./src/utils.c`, update the function `initAppFilesAndDirs()` which creates a default configuration if `~/.config/notewrapper/config.json` or if neither `-c` nor `--config` is set.
+3. In `./src/main.c` where the JSON is parsed, add the parsing logic. Do not forget the debugging information, errors when wrong type or when an important field is missing and add a default value if a less important field is missing.
+
+---
+
 ## Before opening a pull request
 
 Before submitting a pull request, ensure that:
