@@ -206,9 +206,16 @@ void handleBackups(const char *pathOfVaults, const char *pathOfBackup, const cha
     }
 }
 
-int doesEditorExist (char *editorToCheck, int shouldDebug) {     // Some exectuables have not exaclty the same name as the editor.
-  char *editor;   
-    if (strcmp(editorToCheck, "neovim") == 0) {
+int isEditorValid (char *editorToCheck, int useDefaultEditor, int shouldDebug) { // check if editor is supported and if it is installed
+    // check if supported 
+    if (useDefaultEditor) { // we use a different error message if it defaulted to $EDITOR
+      error(!isStringInArray(editorToCheck, supportedEditor, numEditors), "user", "%s is not a supported editor.\n(defaulted to $EDITOR as neither \"editor\" was set in the configuration file nor -e/--editor <editor> was set.)\n See https://github.com/tomasriveral/NoteWrapper#editor-support for a list of supported editors.", editorToCheck);
+    } else {
+      error(!isStringInArray(editorToCheck, supportedEditor, numEditors), "user", "%s is not a supported editor.\n See https://github.com/tomasriveral/NoteWrapper#editor-support for a list of supported editors.", editorToCheck);
+    }
+    // check if installed
+    char *editor;   
+    if (strcmp(editorToCheck, "neovim") == 0) {  // some executables are not name the same as the project
       editor = strdup("nvim"); // we must use strdup and not just copy as we would have modified editorToOpen in main
     } else if (strcmp(editorToCheck, "helix") == 0) {
       editor = strdup("hx");
