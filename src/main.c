@@ -2,6 +2,7 @@
 #include "ui.h"
 #include "utils.h"
 #include "notes.h"
+#include <errno.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -209,7 +210,8 @@ arg_next:
 
         // handles the path to the backup for each directory
         cJSON *pathToBackupJSON = cJSON_GetObjectItem(backupJSON, "directory");
-        error(cJSON_IsObject(pathToBackupJSON), "user", "In %s, incorrect type for \"backup\". It must be a JSON object.");
+        debug("%s", cJSON_Print(pathToBackupJSON));
+        error(pathToBackupJSON == NULL && !(cJSON_IsObject(pathToBackupJSON) || cJSON_IsArray(pathToBackupJSON) || cJSON_IsString(pathToBackupJSON) || cJSON_IsNumber(pathToBackupJSON) || cJSON_IsBool(pathToBackupJSON)), "user", "In %s, incorrect type for \"directory\". It must be a JSON object.", configPath); // for some reason cJSON_IsObject does not work. So we must do it like this.
         for (int i = 0; i < numDirectories; i++) { // we iterate over every 
           cJSON *pathToBackupForIthDirectoryJSON = cJSON_GetObjectItem(pathToBackupJSON, directoriesArray[i]);
           if (pathToBackupForIthDirectoryJSON) {
