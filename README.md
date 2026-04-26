@@ -184,7 +184,7 @@ Edit `~/.config/notewrapper/config.json`. If it does not exist, it will be creat
 * `directory`: root directory containing all vaults
 * `render`: enable/disable Vivify rendering
 * `jumpToEndOfFileOnLaunch`: move cursor to end of file on open
-* `editor`: selected editor (must be supported)
+* `editor`: selected editor (must be supported). If not set, it defaults to `$EDITOR`.
 * `journalRegex`: regex used to detect journal files
 * `dateEntry`: format for journal entries (see `strftime`)
 * `newLineOnOpening`: add a newline when opening a note
@@ -209,4 +209,4 @@ It is recommended to use a browser different from your main one for rendering.
 * [ ] A converter between journal types
 * [ ] Support multiple vault directories
 * [ ] Port NoteWrapper to other editors (non-exhaustive list of planned ports: `emacs -nw`, `jed`, `ad`, flow-control, `ee`, `amp`, `dte`, `cano`, `mle`, `zee`, `ptext`, `kibi`, `ox`, `ne`, `dit`, `zile`, `moe`, `joe`, `pico`, `vis`)
-* [ ] Default to $EDITOR
+* [x] Default to $EDITOR

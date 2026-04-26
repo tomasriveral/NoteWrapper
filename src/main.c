@@ -136,14 +136,16 @@ arg_next:
       debug("In %s, \"jumpToEndOfFileOnLaunch\" wasn't set or we encountered a abnormal type. Defaulting to true.", configPath);
     }
     
-    char *editorToOpen = "neovim"; // default
+    char *editorToOpen = getenv("EDITOR"); // default to $EDITOR
+    int defaultEditor = 1; // this will be used in the warning if the editor does not exists or is unsupported.
     cJSON *editorToOpenJSON = cJSON_GetObjectItem(json, "editor");
     if (editorToOpenJSON && cJSON_IsString(editorToOpenJSON)) {
       editorToOpen = strdup(cJSON_GetStringValue(editorToOpenJSON)); // we must strdup and not just = as we will free all the json after (before parsing args)
+      defaultEditor = 0;
       debug("In %s, \"editor\" was set to %s.", configPath, editorToOpen);
-      error(!isStringInArray(editorToOpen, supportedEditor, numEditors), "user", "%s (fetched from config.json) is not a supported editor.", editorToOpen);
+      //error(!isStringInArray(editorToOpen, supportedEditor, numEditors), "user", "%s (fetched from config.json) is not a supported editor.", editorToOpen); // we check if editor is supported at the end
     } else {
-      debug("In %s, \"editor\" wasn't set or we encountered a abnormal type. Defaulting to %s.", configPath, editorToOpen);
+      debug("In %s, \"editor\" wasn't set or we encountered a abnormal type. Defaulting to $EDITOR (%s).\n P.S. this might still be overwritten by -e or --editor.", configPath, editorToOpen);
     }
     
     cJSON *journalRegexJSON = cJSON_GetObjectItem(json, "journalRegex");
@@ -274,6 +276,7 @@ for (int i = 1; i < argc; i++) {
         } else if (strcmp(arg, "--editor") == 0) {
             error(i + 1 == argc, "user", "Missing argument for --editor");
             editorToOpen = argv[++i];
+            defaultEditor = 0;
             debug("--editor set to %s", editorToOpen);
 
         } else if (strcmp(arg, "--note") == 0) {
@@ -404,6 +407,7 @@ for (int i = 1; i < argc; i++) {
 
                         case 'e':
                             editorToOpen = value;
+                            defaultEditor = 0;
                             debug("-e set editor to %s", value);
                             break;
 
@@ -442,10 +446,9 @@ next_arg:
 }
     // if -n or --note is set but not -v or --vaults it gives an error
     error(!bypassSelectionVault && bypassSelectionNote, "user", "If you want to specify the note, you must also specify the vault with -v <vault's name> or --vault <vault's name>.");
-
-
-    error(!doesEditorExist(editorToOpen, shouldDebug), "user", "%s is either not in your path or not installed.", editorToOpen);
     debug("Finished parsing the attribute flags");
+
+    isEditorValid(editorToOpen, defaultEditor, shouldDebug); // check if editor is supported and if it is installed. If not, it will throw an error.
 
     if (doesBackup) {
       handleBackups(notesDirectoryString, pathToBackup, homedir, interval, (const char**)rsyncArgs, rsyncArgsNumber, shouldDebug);

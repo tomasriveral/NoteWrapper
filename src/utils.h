@@ -43,9 +43,11 @@ int compareString(const void *a, const void *b);
 // compares two strings in reversed alphabetical order
 // this function is used for qsort
 int reverseCompareString(const void *a, const void *b);
+// checks if editor is supported and if it installed.
 // this basically checks all the dirs from your path for the editor. This is a safety check.
 // If the executable from an editor is not the editor name (for example neovim and nvim), you must handle at the start of the function.
-int doesEditorExist(char *editorToCheck, int debug);
+// This can return an error and stop the program.
+int isEditorValid(char *editorToCheck, int useDefaultEditor, int debug);
 // please use the macro debug instead of _debug.
 //formated debugging.
 void _debug(const int d, const char *file, const int line, const char *function, const char *message, ...);
