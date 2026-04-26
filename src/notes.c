@@ -127,14 +127,17 @@ char **getVaultsFromDirectories(char **directoryStringArray, int directoryNumber
       altDebug("%s", entryName);
       if (entryName[0] != '.') { // if not hidden file/dir
         char tempFullEntryPath[PATH_MAX]; // we recreate the full path to check it's proprieties
-        snprintf(tempFullEntryPath, PATH_MAX, "%s/%s", directoryStringArray[i], entryName);
+        snprintf(tempFullEntryPath, PATH_MAX, "%s%s", directoryStringArray[i], entryName);
+        altDebug(" (%s)", tempFullEntryPath);
         //checking the metadata to see if it is a dir
         struct stat metadataEntry;
         if (stat(tempFullEntryPath, &metadataEntry) == 0 && S_ISDIR(metadataEntry.st_mode)) { // get's the metadata (stat should return 0 if fails) and sees if it is a dir.
           altDebug(" is a vault\n");
-          vaultsArray = realloc(vaultsArray, + sizeof(char *)*(nthVault + 1)); // resize vaultsArray
+          vaultsArray = realloc(vaultsArray, sizeof(char *)*(nthVault + 1)); // resize vaultsArray
+          error(vaultsArray == NULL, "program", "realloc failed");
           vaultsPerDirectoryNumber[i]++; // it will be used later to know which vaults goes into which directory
           vaultsArray[nthVault] = strdup(entryName); // we use strdup and not strcpy, because memory used with opendir and readdir will be closed.
+          error(vaultsArray[nthVault] == NULL, "program", "strdup failed");
           nthVault++; // it is used immediatly to set the vault into directoryStringArray
         } else {
           altDebug(" is not a vault (not a dir.)\n");
@@ -146,9 +149,9 @@ char **getVaultsFromDirectories(char **directoryStringArray, int directoryNumber
     closedir(vaultsDirectory);
   }
   // we calculate once the total number of vaults to avoid recalculation every time we use it
-  count = 0;
+  *count = 0;
   for (int i = 0; i < directoryNumber; i++) {
-    count += vaultsPerDirectoryNumber[i];
+    *count += vaultsPerDirectoryNumber[i];
   }
   return vaultsArray;
 }
