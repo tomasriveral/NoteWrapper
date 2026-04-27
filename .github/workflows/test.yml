@@ -22,6 +22,8 @@ jobs:
           libncurses-dev \
           git \
           neovim
+    - name: Prepare environnement
+      run: mkdir -p ~/Documents/Notes
     - name: Build
       run: make
 
