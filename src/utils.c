@@ -112,17 +112,25 @@ static void ensureDir(const char *path, const int shouldDebug) {
 }
 
 void initAppFilesAndDirs(const char *home, const int shouldDebug) {
+    // sometimes .cache and .config doesn't exist. Such as with github actions machines
     char config_dir[PATH_MAX];
     char cache_dir[PATH_MAX];
-
+    
     snprintf(config_dir, sizeof(config_dir),
-             "%s/.config/notewrapper", home);
+             "%s/.config/", home);
 
     snprintf(cache_dir, sizeof(cache_dir),
-             "%s/.cache/notewrapper", home);
+             "%s/.cache/", home);
 
     ensureDir(config_dir, shouldDebug);
     ensureDir(cache_dir, shouldDebug);
+    
+    strncat(config_dir, "notewrapper/", PATH_MAX);
+    strncat(cache_dir, "notewrapper/", PATH_MAX);
+
+    ensureDir(config_dir, shouldDebug);
+    ensureDir(cache_dir, shouldDebug);
+ 
 
     char config_file[PATH_MAX+12];
     snprintf(config_file, sizeof(config_file), "%s/config.json", config_dir);
