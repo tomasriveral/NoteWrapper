@@ -85,3 +85,12 @@ Before submitting a pull request, ensure that:
   * `make`, or
   * `nix-build` (on NixOS)
 * There are **no warnings or errors**
+
+---
+
+## Continuous integration
+
+All PR will need to pass these checks:
+1. `clang-format`. Running `find src -name "*.c" -o -name "*.h" | xargs clang-format -i` will automatically apply those rules.
+2. The program must build without warning or error.
+3. The program must run for five seconds without crashing.
