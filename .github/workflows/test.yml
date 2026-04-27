@@ -22,8 +22,8 @@ jobs:
           pkg-config \
           libcjson-dev \
           libncurses-dev \
-          git
-
+          git \
+          neovim
     - name: Build
       run: make
 
