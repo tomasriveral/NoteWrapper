@@ -1,6 +1,4 @@
 #include "utils.h"
-#include "unistd.h"
-#include <stdio.h>
 
 const char *supportedEditor[] = {"helix", "jed", "kakoune", "micro", "nano", "neovim", "vi", "vim"};
 const int numEditors = 8;
