@@ -2,7 +2,7 @@ CC := gcc
 
 VERSION := $(shell git describe --tags --always --dirty)
 
-CFLAGS := -Wall -Wextra -O2 \
+CFLAGS := -Wall -Wextra -Werror -O2 \
 		  -DVERSION=\"$(VERSION)\" \
 	      $(shell pkg-config --cflags libcjson ncurses)
 
