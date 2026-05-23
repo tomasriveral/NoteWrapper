@@ -1,6 +1,6 @@
 # NoteWrapper
 
-Note: This project fullfills all my usecase for now, so my main source for features ideas dried out. So if you have good ideas, feel free to open an issue ;)
+Note: This project fullfills all my usecases for now, so my main source for features ideas dried out. So if you have good ideas, feel free to open an issue ;)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tomasriveral/notewrapper)
 
