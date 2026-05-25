@@ -4,9 +4,13 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    notewrapper = {
+      url = "github:tomasriveral/NoteWrapper";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, notewrapper }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -15,12 +19,7 @@
           pname = "notewrapper";
           version = "2.0";
 
-          src = pkgs.fetchFromGitHub {
-            owner = "tomasriveral";
-            repo = "NoteWrapper";
-            tag = "v${finalAttrs.version}";
-            hash = "sha256-JoI38n5RZ/s0n+Vr9Bri2oiFeyj7Xrt1AmglmcuMpmQ=";
-          };
+          src = notewrapper;
 
           nativeBuildInputs = with pkgs; [
             pkg-config
