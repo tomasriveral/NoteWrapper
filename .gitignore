@@ -8,3 +8,4 @@ result
 massif.out.*
 *.out.*
 vgcore.*
+.direnv/
