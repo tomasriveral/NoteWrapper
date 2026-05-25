@@ -57,6 +57,26 @@ You must also have a [supported editor (and their associated plugin if needed)](
 
 ## How to install
 
+### Nix flakes
+
+Add this to your inputs in flake.nix:
+
+```nix
+notewrapper = {
+  url = "github:tomasriveral/notewrapper";
+};
+```
+If your flake already inputs nixpkgs and/or flake-utils, you can follow it:
+```nix
+notewrapper = {
+  url = "github:tomasriveral/notewrapper;
+  inputs.nixpkgs.follow = "nixpkgs";
+  inputs.flake-utils.follow = "flake-utils";
+};
+```
+
+### Building from source
+
 1. Install all required dependencies listed above.
 2. Ensure you have a supported editor installed.
 3. Clone the repository:
@@ -89,7 +109,7 @@ make
 
 ---
 
-## Packaging
+### Packaging
 
 There is currently no official package available for NoteWrapper.
 
