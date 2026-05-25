@@ -34,10 +34,27 @@
         "type": "github"
       }
     },
+    "notewrapper": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779721342,
+        "narHash": "sha256-QbRzgD4HoUUemaVCIZ2VfiW+SUjzFY2rL51CLOxQLvk=",
+        "owner": "tomasriveral",
+        "repo": "NoteWrapper",
+        "rev": "e370f98c5ebc3c037dec4e7e35f26230724b70d3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tomasriveral",
+        "repo": "NoteWrapper",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "notewrapper": "notewrapper"
       }
     },
     "systems": {
