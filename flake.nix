@@ -24,6 +24,7 @@
           nativeBuildInputs = with pkgs; [
             pkg-config
             gnumake
+            git # The makefile uses git to get the tagged version. Without it notewrapper --version can't return the version.
           ];
 
           buildInputs = with pkgs; [
