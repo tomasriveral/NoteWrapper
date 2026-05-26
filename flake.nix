@@ -17,7 +17,7 @@
       in {
         packages.default = pkgs.stdenv.mkDerivation (finalAttrs: {
           pname = "notewrapper";
-          version = "2.0";
+          version = "v2.1";
 
           src = notewrapper;
 
@@ -36,12 +36,8 @@
             gnused
           ];
 
-          makeFlags = [
-            "VERSION=2.0"
-          ];
-
           buildPhase = ''
-            make
+            make VERSION=${finalAttrs.version}
           '';
 
           installPhase = ''
