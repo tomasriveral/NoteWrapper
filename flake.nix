@@ -17,14 +17,13 @@
       in {
         packages.default = pkgs.stdenv.mkDerivation (finalAttrs: {
           pname = "notewrapper";
-          version = "2.0";
+          version = "v2.1";
 
           src = notewrapper;
 
           nativeBuildInputs = with pkgs; [
             pkg-config
             gnumake
-            git # The makefile uses git to get the tagged version. Without it notewrapper --version can't return the version.
           ];
 
           buildInputs = with pkgs; [
@@ -37,12 +36,8 @@
             gnused
           ];
 
-          makeFlags = [
-            "VERSION=2.0"
-          ];
-
           buildPhase = ''
-            make
+            make VERSION=${finalAttrs.version}
           '';
 
           installPhase = ''

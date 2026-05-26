@@ -1,0 +1,55 @@
+name: Release PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release_pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - uses: DeterminateSystems/nix-installer-action@v12
+
+      - name: Create release branch
+        run: |
+          git checkout -B release/v${{ inputs.version }}
+
+      - name: Set version in flake.nix
+        run: |
+          sed -i "s/version = \".*\";/version = \"${{ inputs.version }}\";/" flake.nix
+
+      - name: Update flake inputs
+        run: nix flake update
+
+      - name: Commit changes
+        run: |
+          git add flake.nix flake.lock
+          git commit -m "chore(release): ${{ inputs.version }}"
+
+      - name: Push branch
+        run: |
+          git push origin release/v${{ inputs.version }}
+
+      - name: Create Pull Request
+        run: |
+          gh pr create \
+            --base main \
+            --head release/v${{ inputs.version }} \
+            --title "[Automatic] Release PR v${{ inputs.version }}" \
+            --body "Automated release PR.\nAfter the test's succesfull run, create manually a release with a new tag matching ${{ inputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
