@@ -37,11 +37,11 @@
     "notewrapper": {
       "flake": false,
       "locked": {
-        "lastModified": 1779788695,
-        "narHash": "sha256-JdTeS6rxDEa+A+rQjbFJajBhlwauBApIP3UwvrPbaf4=",
+        "lastModified": 1779896337,
+        "narHash": "sha256-Xw5vkiN4ei2dkzIRXP0DLSYG8QRjQ0MLvFx2akt96kk=",
         "owner": "tomasriveral",
         "repo": "NoteWrapper",
-        "rev": "d537357802940e924d77ebd0fc1a658f884138ea",
+        "rev": "4d228fb9118f22264863716ac2d74c4ad67edbf8",
         "type": "github"
       },
       "original": {
