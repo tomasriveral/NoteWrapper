@@ -17,7 +17,7 @@
       in {
         packages.default = pkgs.stdenv.mkDerivation (finalAttrs: {
           pname = "notewrapper";
-          version = "v2.1.1";
+          version = "v2.2";
 
           src = notewrapper;
 
