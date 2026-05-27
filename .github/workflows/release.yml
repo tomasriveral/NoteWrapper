@@ -48,7 +48,7 @@ jobs:
         run: |
           gh pr create \
             --base main \
-            --head release/v${{ inputs.version }} \
+            --head release/${{ inputs.version }} \
             --title "[Automatic] Release PR ${{ inputs.version }}" \
             --body "Automated release PR.\nAfter the test's succesfull run, create manually a release with a new tag matching ${{ inputs.version }}"
         env:
