@@ -529,9 +529,14 @@ backup_config_end:
                   shouldDebug); // check if editor is supported and if it is installed. If not, it
                                 // will throw an error.
 
+    int *backupMessage = malloc(sizeof(int)); // Used later to set the backuping message.
+    *backupMessage = 0;                       // default don't show the message
+    int forceBackup = 0;
     if (doesBackup) {
-        debug("Handling backup");
-        handleBackups(directoriesArray, numDirectories, backupDirectoriesArray, homedir, interval, (const char **)rsyncArgs, rsyncArgsNumber, shouldDebug);
+        debug("Handling normal backup");
+        forceBackup = 0;
+        handleBackups(directoriesArray, numDirectories, backupDirectoriesArray, homedir, interval, (const char **)rsyncArgs, rsyncArgsNumber, forceBackup, backupMessage, shouldDebug);
+        debug("backupMessage was set to %d by a normal backup", *backupMessage);
     }
 
     initscr(); // initialize ncurses
@@ -572,13 +577,26 @@ backup_config_end:
             }
             altDebug("└ ------------------------------\n");
         }
-
-        // adds "create a new vault" into the vaultsArray
-        const int extraOptions = 3;
+        int extraOptions = 3;
+        if (doesBackup) {
+            extraOptions++; // space for "Backup now" button
+        }
+        if (*backupMessage) {
+            extraOptions++;
+        }
         vaultsArray = realloc(vaultsArray, (vaultsCount + extraOptions) * sizeof(char *)); // resize vaultsArray to fit the extra options
-        vaultsArray[vaultsCount] = "Create a new vault";                                   // some more options that are not vaults
-        vaultsArray[vaultsCount + 1] = "Settings";
-        vaultsArray[vaultsCount + 2] = "Quit (Ctrl+C)";
+        int index = 0;
+        vaultsArray[vaultsCount + index++] = "Create a new vault"; // some more options that are not vaults
+        vaultsArray[vaultsCount + index++] = "Settings";
+        if (doesBackup) {
+            vaultsArray[vaultsCount + index++] = "Backup now";
+        }
+        vaultsArray[vaultsCount + index++] = "Quit (Ctrl+C)";
+        if (*backupMessage) {
+            vaultsArray[vaultsCount + index++] = "A backup was launched. Do not immediatly close the program. After a few seconds, you can safely ignore this message.";
+        };
+
+        *backupMessage = 0; // we reset it to show the message only once
 
         vaultSelected = ncursesSelect(vaultsArray, "Select vault to open (Use arrows or WASD, Enter to select):", vaultsCount, extraOptions, " ", "Or select an option below", "", shouldDebug);
 
@@ -594,7 +612,8 @@ backup_config_end:
         }
 
         debug("Selected vault: %s", vaultSelected);
-        if (strcmp(vaultSelected, "Create a new vault") != 0 && strcmp(vaultSelected, "Settings") != 0 && strcmp(vaultSelected, "Quit (Ctrl+C)") != 0) {
+        if (strcmp(vaultSelected, "Create a new vault") != 0 && strcmp(vaultSelected, "Settings") != 0 && strcmp(vaultSelected, "Quit (Ctrl+C)") != 0 && strcmp(vaultSelected, "Backup now") != 0 &&
+            strcmp(vaultSelected, "A backup was launched. Do not immediatly close the program. After a few seconds, you can safely ignore this message.") != 0) {
         note_selection:
             bypassSelectionVault = 0; // we must reset bypassSelectionVault to not get stuck in a
                                       // infinite loop of bypassing
@@ -731,6 +750,11 @@ backup_config_end:
         } else if (strcmp(vaultSelected, "Settings") == 0) {
             openEditor(configPath, editorToOpen, 0, 0,
                        shouldDebug); // as this is not a md file we set render and jumptoEnfOfFile to 0
+        } else if (strcmp(vaultSelected, "Backup now") == 0) {
+            debug("Running a forced backup");
+            forceBackup = 1;
+            handleBackups(directoriesArray, numDirectories, backupDirectoriesArray, homedir, interval, (const char **)rsyncArgs, rsyncArgsNumber, forceBackup, backupMessage, shouldDebug);
+            debug("backupMessage was set to %d by a normal backup", *backupMessage);
         } else if (strcmp(vaultSelected, "Quit (Ctrl+C)") == 0) {
             debug("The program was exited");
             shouldExit = 1;

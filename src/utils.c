@@ -167,8 +167,9 @@ void initAppFilesAndDirs(const char *home, const int shouldDebug) {
 }
 
 void handleBackups(char **sourceDirectoryArray, const int sourceNumber, char **destinationDirectoryArray, const char *homeDir, const int interval, const char **rsyncArguments, const int rsyncArgumentsNumber,
-                   const int shouldDebug) {
+                   const int forceBackup, int *backupMessage, const int shouldDebug) {
     int shouldBackup = 0;
+
     time_t now = time(NULL);
     debug("Time since epoch is %ld", (long)now);
     char cacheFilePATH[PATH_MAX];
@@ -203,8 +204,12 @@ void handleBackups(char **sourceDirectoryArray, const int sourceNumber, char **d
             error(1, "program", "Invalid timestamp in cache file: %s", line);
         }
         double deltaTime = difftime(now, lastBackupTime);
-        if (deltaTime > interval) {
-            debug("(difftime) %f is greater than (interval) %d -> backuping...", deltaTime, interval);
+        if (deltaTime > interval || forceBackup) {
+            if (!forceBackup) {
+                debug("(difftime) %f is greater than (interval) %d -> backuping...", deltaTime, interval);
+            } else {
+                debug("Backup was forced. backuping...");
+            }
             shouldBackup = 1;
             cacheFile = fopen(cacheFilePATH, "w");
             if (!cacheFile) {
@@ -218,6 +223,7 @@ void handleBackups(char **sourceDirectoryArray, const int sourceNumber, char **d
     }
 
     if (shouldBackup) {
+        *backupMessage = 1;
         debug("A backup is needed");
         for (int i = 0; i < sourceNumber; i++) {
             debug("%s", destinationDirectoryArray[i]);
