@@ -719,12 +719,12 @@ backup_config_end:
                     // we can just go back to open_note
                     goto open_note;
                 } else if (strcmp(noteSelected, "Search inside the vault") == 0) {
-                  char *vaultPath = malloc(PATH_MAX);
-                  snprintf(vaultPath, PATH_MAX, "%s/%s/", notesDirectoryString, vaultSelected);
-                  char *result = fzfSelect(vaultPath, "Input text to be searched", shouldDebug);
-                  bypassSelectionNote = 1;
-                  bypassSelectionNoteValue = result;
-                  free(vaultPath);
+                    char *vaultPath = malloc(PATH_MAX);
+                    snprintf(vaultPath, PATH_MAX, "%s/%s/", notesDirectoryString, vaultSelected);
+                    char *result = fzfSelect(vaultPath, "Input text to be searched", shouldDebug);
+                    bypassSelectionNote = 1;
+                    bypassSelectionNoteValue = result;
+                    free(vaultPath);
                 } else if (strcmp(noteSelected, "Back to vault selection") == 0) {
                     shouldChangeVault = 1;
                 } else if (strcmp(noteSelected, "Delete vault") == 0) {

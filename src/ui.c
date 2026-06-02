@@ -218,15 +218,14 @@ char *fzfSelect(char *pathToFiles, char *selectText, int shouldDebug) {
     int pathToFilesLen = strlen(pathToFiles);
     int cutOut = 0;
     for (int i = 0; i < pathToFilesLen; i++) {
-      if (pathToFiles[i] == result[i]) {
-        cutOut = i;
-      }
+        if (pathToFiles[i] == result[i]) {
+            cutOut = i;
+        }
     }
     result += cutOut + 1; // the + 1 cuts the first /
 
     // in case we select a journal, we won't open the entry just yet. We only need to return the journal name (everything before [now the first] /
     result = strtok(result, "/");
-
 
     debug("Cleaned note: %s", result);
 
