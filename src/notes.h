@@ -25,6 +25,7 @@ char **getVaultsFromDirectories(char **directoryStringArray, int directoryNumber
 // handles both type of journal (divided and unified).
 // creates new entry with date.
 // for divided select if we want to acces to a new entry or a old one.
+// returnNoteSelection tells us if the user wants to go back to the note selection.
 // returns the path to the file that needs to be opened.
-char *updateJournal(char *path, char *journal, char *timeFormat, int *journalWasUpdated, int shouldDebug);
+char *updateJournal(char *path, char *journal, char *timeFormat, int *journalWasUpdated, int *returnNoteSelection, int shouldDebug);
 #endif
