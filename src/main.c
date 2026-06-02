@@ -644,12 +644,13 @@ backup_config_end:
                     altDebug("└------------------------------\n");
                 }
                 // adds options
-                int extraNotesOptions = 4;
+                int extraNotesOptions = 5;
                 filesArray = realloc(filesArray, (filesCount + extraNotesOptions) * sizeof(char *)); // resize filesArray to fit the extra options
                 filesArray[filesCount] = "Create new note";
-                filesArray[filesCount + 1] = "Back to vault selection";
-                filesArray[filesCount + 2] = "Delete vault";
-                filesArray[filesCount + 3] = "Quit (Ctrl+C)";
+                filesArray[filesCount + 1] = "Search inside the vault";
+                filesArray[filesCount + 2] = "Back to vault selection";
+                filesArray[filesCount + 3] = "Delete vault";
+                filesArray[filesCount + 4] = "Quit (Ctrl+C)";
                 char *noteSelected;
                 // if we set to bypass the note selector
                 if (bypassSelectionNote) {
@@ -680,7 +681,7 @@ backup_config_end:
                 free(filesArray);
                 debug("Selected note: %s", noteSelected);
                 if (strcmp(noteSelected, "Create new note") != 0 && strcmp(noteSelected, "Back to vault selection") != 0 && strcmp(noteSelected, "Delete vault") != 0 &&
-                    strcmp(noteSelected, "Quit (Ctrl+C)") != 0) {
+                    strcmp(noteSelected, "Quit (Ctrl+C)") != 0 && strcmp(noteSelected, "Search inside the vault") != 0) {
                 open_note:
                     bypassSelectionNote = 0; // we must reset bypassSelectionNote to avoid getting into an infinite
                                              // loop of bypassing the note selection
@@ -717,6 +718,13 @@ backup_config_end:
                     noteSelected = createNewNote(notesDirectoryString, vaultSelected, bypassSelectionNote, bypassSelectionNoteValue, journalRegex, shouldDebug);
                     // we can just go back to open_note
                     goto open_note;
+                } else if (strcmp(noteSelected, "Search inside the vault") == 0) {
+                  char *vaultPath = malloc(PATH_MAX);
+                  snprintf(vaultPath, PATH_MAX, "%s/%s/", notesDirectoryString, vaultSelected);
+                  char *result = fzfSelect(vaultPath, "Input text to be searched", shouldDebug);
+                  bypassSelectionNote = 1;
+                  bypassSelectionNoteValue = result;
+                  free(vaultPath);
                 } else if (strcmp(noteSelected, "Back to vault selection") == 0) {
                     shouldChangeVault = 1;
                 } else if (strcmp(noteSelected, "Delete vault") == 0) {
