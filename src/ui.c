@@ -179,13 +179,7 @@ char *fzfSelect(char *pathToFiles, char *selectText, int shouldDebug) {
     error(fd == -1, "program", "mkstemp failed");
     close(fd);
 
-    /*
-     * STEP 1:
-     * Build index once into temp file
-     * format: file:line:content
-     */
     snprintf(command, sizeof(command), "rg --line-number --no-heading --color=never . \"%s\" > %s", pathToFiles, indexFile);
-
     debug("INDEX CMD: %s", command);
 
     if (system(command) != 0) {
@@ -193,45 +187,6 @@ char *fzfSelect(char *pathToFiles, char *selectText, int shouldDebug) {
         error(1, "program", "rg indexing failed");
     }
 
-    /*
-     * STEP 2:
-     * Use fzf on the index file (NO rg anymore)
-     */
-    /*
-      EXPLANATION:
-
-      cat %s
-        → feeds prebuilt index file (format: file:line:content) into fzf
-
-      fzf --delimiter ':'
-        → splits each line into fields:
-           {1} = file path
-           {2} = line number
-           {3} = content
-
-      --prompt
-        → UI prompt text shown in fzf
-
-      --preview
-        → runs a shell command for selected item:
-           file={1}  → current file
-           line={2}  → line number of match
-
-      nl -ba "$file"
-        → prints file with line numbers
-
-      sed -n "$((line-5)),$((line+5))p"
-        → extracts a window of 5 lines above and below match
-
-      sed "... -> ..."
-        → highlights the matched line (middle of window) with red arrow
-
-      --preview-window=right:60%:hidden
-        → preview appears on right, 60% width, initially hidden
-
-      --bind 'change:show-preview'
-        → preview only appears after first selection change (not at startup)
-    */
     snprintf(command, sizeof(command),
              "cat %s | fzf --delimiter ':' --prompt='%s' "
              "--preview 'file={1}; line={2}; nl -ba \"$file\" | sed -n \"$((line-5)),$((line+5))p\" | "
@@ -254,16 +209,25 @@ char *fzfSelect(char *pathToFiles, char *selectText, int shouldDebug) {
         buffer[strcspn(buffer, "\n")] = '\0';
         result = strdup(buffer);
     }
+    debug("Buffer: %s", buffer);
+    debug("result: %s", result);
 
     // cut at first ':'
     result = strtok(result, ":");
-    // cut at / (because we need the full paths before and we only need to return the journal entry)
-    char *token = strtok(result, "/");
-    result = NULL;
-    while (token != NULL) {
-        result = token;
-        token = strtok(NULL, "/"); // Passing NULL means “don’t start a new string, resume
+    // we need to cut out the whole pathToFiles
+    int pathToFilesLen = strlen(pathToFiles);
+    int cutOut = 0;
+    for (int i = 0; i < pathToFilesLen; i++) {
+        if (pathToFiles[i] == result[i]) {
+            cutOut = i;
+        }
     }
+    result += cutOut + 1; // the + 1 cuts the first /
+
+    // in case we select a journal, we won't open the entry just yet. We only need to return the journal name (everything before [now the first] /
+    result = strtok(result, "/");
+
+    debug("Cleaned note: %s", result);
 
     // clean up
     pclose(fzfPipe);
