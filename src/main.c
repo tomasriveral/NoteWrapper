@@ -695,24 +695,32 @@ backup_config_end:
 
                     int *journalWasUpdated = malloc(sizeof(int));
                     *journalWasUpdated = 0;
+
+                    // used to go back to note selection
+                    int *returnNoteSelection = malloc(sizeof(int));
+                    *returnNoteSelection = 0;
+
                     if (!regexReturn) { // if the regex matches -> it's a journal
                         debug("%s is a journal. Updating it...", noteSelected);
-                        fullPath = updateJournal(fullPath, noteSelected, timeFormat, journalWasUpdated,
+                        fullPath = updateJournal(fullPath, noteSelected, timeFormat, journalWasUpdated, returnNoteSelection,
                                                  shouldDebug); // we return the path. As if it is a divided journal we
                                                                // must point to the correct entry
                     }
-                    if (newLineOnOpening) {
-                        if (*journalWasUpdated) {
-                            appendToFile(fullPath, " \n",
-                                         shouldDebug); // when updating the journal it adds a \n char at the
-                                                       // end. So appendToFile(\n) does not work. We append a
-                                                       // (special and rare) whitespace character + \n to
-                                                       // bypass this issue.
+                    if (!*returnNoteSelection) { // if we don't need to return to the note selection
+                        if (newLineOnOpening) {
+                            if (*journalWasUpdated) {
+                                appendToFile(fullPath, " \n",
+                                             shouldDebug); // when updating the journal it adds a \n char at the
+                                                           // end. So appendToFile(\n) does not work. We append a
+                                                           // (special and rare) whitespace character + \n to
+                                                           // bypass this issue.
+                            }
+                            appendToFile(fullPath, "\n", shouldDebug);
                         }
-                        appendToFile(fullPath, "\n", shouldDebug);
+                        openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
+                        free(fullPath);
                     }
-                    openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
-                    free(fullPath);
+                    free(returnNoteSelection);
                 } else if (strcmp(noteSelected, "Create new note") == 0) {
                 note_creation:
                     noteSelected = createNewNote(notesDirectoryString, vaultSelected, bypassSelectionNote, bypassSelectionNoteValue, journalRegex, shouldDebug);

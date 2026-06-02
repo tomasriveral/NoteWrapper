@@ -188,7 +188,7 @@ char **getVaultsFromDirectories(char **directoryStringArray, int directoryNumber
     return vaultsArray;
 }
 
-char *updateJournal(char *path, char *journal, char *timeFormat, int *journalWasUpdated, int shouldDebug) {
+char *updateJournal(char *path, char *journal, char *timeFormat, int *journalWasUpdated, int *returnNoteSelection, int shouldDebug) {
     path[PATH_MAX] = '\0'; // it assures it is a string (Most cases this does nothing). But rewriting at least
                            // one bytes make the compile happy. He doesn't want to return an unchanged input.
     debug("Handling the journal %s", path);
@@ -221,13 +221,14 @@ char *updateJournal(char *path, char *journal, char *timeFormat, int *journalWas
         that the Create new entry in journal is on top entryArray = realloc(entryArray,
         sizeof(char*));*/
         // simpler to just malloc 2 and later realloc
-        const int extraOptions = 3;
+        const int extraOptions = 4;
         char **entryArray = malloc(extraOptions * sizeof(char *));
         char *createEntryMessage = malloc(PATH_MAX);
         snprintf(createEntryMessage, PATH_MAX, "Create new entry for the journal %s", journal);
         entryArray[0] = createEntryMessage;
         entryArray[1] = "Open random entry";
         entryArray[2] = "Search inside entries";
+        entryArray[3] = "Return to the note selection";
         int entryCount = extraOptions; // we need to count how many dirs there is to always readjust
                                        // how many memory we alloc
         // Refer https://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
@@ -301,6 +302,8 @@ char *updateJournal(char *path, char *journal, char *timeFormat, int *journalWas
             snprintf(selectedOption, PATH_MAX, "%s/%s", path, temp);
             path = strdup(selectedOption);
             free(selectedOption);
+        } else if (strcmp(selectedOption, "Return to the note selection") == 0) {
+            *returnNoteSelection = 1;
         } else { // we just recreate the path to the selected entry
             // snprintf does not like to have the same variable as input and output so we use a
             // buffer
