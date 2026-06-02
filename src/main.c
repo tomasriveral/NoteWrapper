@@ -667,8 +667,9 @@ backup_config_end:
                         goto note_creation;
                     }
                 }
-                noteSelected = ncursesSelect(filesArray, "Select note or journal to open (Use arrows or WASD, Enter to select or use 1-9 to quick select):", filesCount, extraNotesOptions, " ",
-                                             "Or select an option below", "", shouldDebug);
+                char vaultMessage[PATH_MAX];
+                snprintf(vaultMessage, PATH_MAX, "%s: Select note or journal to open (Use arrows or WASD, Enter to select or use 1-9 to quick select):", vaultSelected);
+                noteSelected = ncursesSelect(filesArray, vaultMessage, filesCount, extraNotesOptions, " ", "Or select an option below", "", shouldDebug);
                 // now that we won't use filesArray in this iteration of the loop, we should free it
                 // and all its elements. (As this is memory in the heap and not the stack and thus
                 // is our responsability to manage)
