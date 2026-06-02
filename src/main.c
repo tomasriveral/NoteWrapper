@@ -598,7 +598,8 @@ backup_config_end:
 
         *backupMessage = 0; // we reset it to show the message only once
 
-        vaultSelected = ncursesSelect(vaultsArray, "Select vault to open (Use arrows or WASD, Enter to select):", vaultsCount, extraOptions, " ", "Or select an option below", "", shouldDebug);
+        vaultSelected = ncursesSelect(vaultsArray, "Select vault to open (Use arrows or WASD, Enter to select or use 1-9 to quick select or use 1-9 to quick select):", vaultsCount, extraOptions, " ",
+                                      "Or select an option below", "", shouldDebug);
 
         // now that we won't use vaultsArray in this iteration of the loop, we should free it and
         // all its elements. (As this is memory in the heap and not the stack and thus is our
@@ -666,8 +667,8 @@ backup_config_end:
                         goto note_creation;
                     }
                 }
-                noteSelected =
-                    ncursesSelect(filesArray, "Select note or journal to open (Use arrows or WASD, Enter to select):", filesCount, extraNotesOptions, " ", "Or select an option below", "", shouldDebug);
+                noteSelected = ncursesSelect(filesArray, "Select note or journal to open (Use arrows or WASD, Enter to select or use 1-9 to quick select):", filesCount, extraNotesOptions, " ",
+                                             "Or select an option below", "", shouldDebug);
                 // now that we won't use filesArray in this iteration of the loop, we should free it
                 // and all its elements. (As this is memory in the heap and not the stack and thus
                 // is our responsability to manage)
@@ -741,7 +742,7 @@ backup_config_end:
                     const char *yesNo[] = {"No, go back to note selection.", "Yes."};
                     char *answer = ncursesSelect((char **)yesNo,
                                                  "Are you sure you want to delete the entire vault? This can "
-                                                 "not be undone (Use arrows or WASD, Enter to select):",
+                                                 "not be undone (Use arrows or WASD, Enter to select or use 1-9 to quick select):",
                                                  1, 1, " ", "", "", shouldDebug);
                     debug("You answered: %s for deleting the vault %s", answer, vaultSelected);
                     if (strcmp(answer, "Yes.") == 0) {

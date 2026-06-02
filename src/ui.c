@@ -6,7 +6,8 @@ void createNewVault(char **directoriesArray, int directoryCount, char **vaultsAr
     int emptyWarning = 0;     // set to 1 later if inpted empty name
 input_screen:
     // choose in which directory the vault will be created
-    char *dirToVault = ncursesSelect(directoriesArray, "Select a directory, in which the vault will remain (Use arrows or WASD, Enter to select)", directoryCount, 0, "", "", " ", shouldDebug);
+    char *dirToVault =
+        ncursesSelect(directoriesArray, "Select a directory, in which the vault will remain (Use arrows or WASD, Enter to select or use 1-9 to quick select)", directoryCount, 0, "", "", " ", shouldDebug);
     char *vaultName = malloc(PATH_MAX);
     if (!bypass) { // if won't bypass (if -v or --vault weren't set)
         echo();
@@ -307,6 +308,69 @@ char *ncursesSelect(char **options, char *optionsText, int optionsNumber, int ex
             highlight++;
             if (highlight >= optionsNumber + extraOptionsNumber) {
                 highlight = 0;
+            }
+            break;
+        case '1':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 1.");
+                highlight = 0;
+                goto end_loop;
+            }
+            break;
+        case '2':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 2.");
+                highlight = 1;
+                goto end_loop;
+            }
+            break;
+        case '3':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 3.");
+                highlight = 2;
+                goto end_loop;
+            }
+            break;
+        case '4':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 4.");
+                highlight = 3;
+                goto end_loop;
+            }
+            break;
+        case '5':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 5.");
+                highlight = 4;
+                goto end_loop;
+            }
+            break;
+        case '6':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 6.");
+                highlight = 5;
+                goto end_loop;
+            }
+            break;
+        case '7':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 7.");
+                highlight = 6;
+                goto end_loop;
+            }
+            break;
+        case '8':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 8.");
+                highlight = 7;
+                goto end_loop;
+            }
+            break;
+        case '9':
+            if (optionsNumber + extraOptionsNumber >= 1) {
+                debug("Quickselected option 9.");
+                highlight = 8;
+                goto end_loop;
             }
             break;
         case 10: //\n
