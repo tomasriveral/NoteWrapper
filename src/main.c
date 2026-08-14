@@ -642,7 +642,8 @@ backup_config_end:
 
         *backupMessage = 0; // we reset it to show the message only once
 
-        vaultSelected = ncursesSelect(vaultsArray, "Select vault to open (Use arrows or WASD, Enter to select):", vaultsCount, extraOptions, " ", "Or select an option below", "", shouldDebug);
+        vaultSelected = ncursesSelect(vaultsArray, "Select vault to open (Use arrows or WASD, Enter to select or use 1-9 to quick select or use 1-9 to quick select):", vaultsCount, extraOptions, " ",
+                                      "Or select an option below", "", shouldDebug);
 
         // now that we won't use vaultsArray in this iteration of the loop, we should free it and
         // all its elements. (As this is memory in the heap and not the stack and thus is our
@@ -715,8 +716,9 @@ backup_config_end:
                         goto note_creation;
                     }
                 }
-                noteSelected =
-                    ncursesSelect(filesArray, "Select note or journal to open (Use arrows or WASD, Enter to select):", filesCount, extraNotesOptions, " ", "Or select an option below", "", shouldDebug);
+                char vaultMessage[PATH_MAX];
+                snprintf(vaultMessage, PATH_MAX, "%s: Select note or journal to open (Use arrows or WASD, Enter to select or use 1-9 to quick select):", vaultSelected);
+                noteSelected = ncursesSelect(filesArray, vaultMessage, filesCount, extraNotesOptions, " ", "Or select an option below", "", shouldDebug);
                 // now that we won't use filesArray in this iteration of the loop, we should free it
                 // and all its elements. (As this is memory in the heap and not the stack and thus
                 // is our responsability to manage)
@@ -744,21 +746,30 @@ backup_config_end:
 
                     int *journalWasUpdated = malloc(sizeof(int));
                     *journalWasUpdated = 0;
+
+                    // used to go back to note selection
+                    int *returnNoteSelection = malloc(sizeof(int));
+                    *returnNoteSelection = 0;
+
                     if (!regexReturn) { // if the regex matches -> it's a journal
                         debug("%s is a journal. Updating it...", noteSelected);
-                        fullPath = updateJournal(fullPath, noteSelected, timeFormat, journalWasUpdated,
+                        fullPath = updateJournal(fullPath, noteSelected, timeFormat, journalWasUpdated, returnNoteSelection,
                                                  shouldDebug); // we return the path. As if it is a divided journal we
                                                                // must point to the correct entry
                     }
-                    if (newLineOnOpening) {
-                        if (*journalWasUpdated) {
-                            appendToFile(fullPath, " \n",
-                                         shouldDebug); // when updating the journal it adds a \n char at the
-                                                       // end. So appendToFile(\n) does not work. We append a
-                                                       // (special and rare) whitespace character + \n to
-                                                       // bypass this issue.
+                    if (!*returnNoteSelection) { // if we don't need to return to the note selection
+                        if (newLineOnOpening) {
+                            if (*journalWasUpdated) {
+                                appendToFile(fullPath, " \n",
+                                             shouldDebug); // when updating the journal it adds a \n char at the
+                                                           // end. So appendToFile(\n) does not work. We append a
+                                                           // (special and rare) whitespace character + \n to
+                                                           // bypass this issue.
+                            }
+                            appendToFile(fullPath, "\n", shouldDebug);
                         }
-                        appendToFile(fullPath, "\n", shouldDebug);
+                        openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
+                        free(fullPath);
                     }
                     openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
                     if (gitEnabled) { // After closing a file, we need to update the git repo (if git is enable
@@ -790,7 +801,7 @@ backup_config_end:
                     const char *yesNo[] = {"No, go back to note selection.", "Yes."};
                     char *answer = ncursesSelect((char **)yesNo,
                                                  "Are you sure you want to delete the entire vault? This can "
-                                                 "not be undone (Use arrows or WASD, Enter to select):",
+                                                 "not be undone (Use arrows or WASD, Enter to select or use 1-9 to quick select):",
                                                  1, 1, " ", "", "", shouldDebug);
                     debug("You answered: %s for deleting the vault %s", answer, vaultSelected);
                     if (strcmp(answer, "Yes.") == 0) {
