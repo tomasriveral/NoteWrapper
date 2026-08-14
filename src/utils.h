@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <ftw.h>
+#include <git2.h>
 #include <limits.h>
 #include <ncurses.h>
 #include <pwd.h>
@@ -17,7 +18,6 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
-#include <git2.h>
 
 #ifndef VERSION
 #define VERSION "dev"

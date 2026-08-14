@@ -97,20 +97,15 @@ int main(int argc, char *argv[]) {
 
     cJSON *json = cJSON_Parse(data);
 
-  if (!json) {
-      const char *error_ptr = cJSON_GetErrorPtr();
-  
-      if (error_ptr) {
-          error(
-              1,
-              "program",
-              "JSON parse error near: %.30s",
-              error_ptr
-          );
-      }
-  
-      free(data);
-  }
+    if (!json) {
+        const char *error_ptr = cJSON_GetErrorPtr();
+
+        if (error_ptr) {
+            error(1, "program", "JSON parse error near: %.30s", error_ptr);
+        }
+
+        free(data);
+    }
     error(!json, "program", "JSON parse error");
 
     // Parse all of the directories which will( or do) contain the vaults
@@ -303,24 +298,24 @@ int main(int argc, char *argv[]) {
 
             // Configure Git backup
             cJSON *gitJSON = cJSON_GetObjectItem(backupJSON, "git");
-            
+
             if (gitJSON && cJSON_IsObject(gitJSON)) {
                 cJSON *gitEnableJSON = cJSON_GetObjectItem(gitJSON, "enable");
                 cJSON *gitNameJSON = cJSON_GetObjectItem(gitJSON, "name");
                 cJSON *gitEmailJSON = cJSON_GetObjectItem(gitJSON, "email");
-            
+
                 error(!gitEnableJSON || !cJSON_IsBool(gitEnableJSON), "user", "Entry \"git.enable\" in %s must be a bool.", configPath);
                 error(!gitNameJSON || !cJSON_IsString(gitNameJSON), "user", "Entry \"git.name\" in %s must be a string.", configPath);
                 error(!gitEmailJSON || !cJSON_IsString(gitEmailJSON), "user", "Entry \"git.email\" in %s must be a string.", configPath);
-            
+
                 gitEnabled = cJSON_IsTrue(gitEnableJSON) ? 1 : 0;
-            
+
                 if (gitEnabled) {
                     gitSignatureName = strdup(cJSON_GetStringValue(gitNameJSON));
                     gitSignatureEmail = strdup(cJSON_GetStringValue(gitEmailJSON));
-            
+
                     error(gitSignatureName == NULL || gitSignatureEmail == NULL, "program", "malloc failed");
-            
+
                     debug("git in %s is enabled with name \"%s\" and email \"%s\"", configPath, gitSignatureName, gitSignatureEmail);
                 } else {
                     debug("git in %s is disabled", configPath);
@@ -581,8 +576,8 @@ backup_config_end:
 
     // initialized libgit2
     if (gitEnabled) {
-      int libgit2InitializationTimes = git_libgit2_init();
-      error(libgit2InitializationTimes != 1, "program", "libgit2 has been initialized %d times (instead of one)", libgit2InitializationTimes);
+        int libgit2InitializationTimes = git_libgit2_init();
+        error(libgit2InitializationTimes != 1, "program", "libgit2 has been initialized %d times (instead of one)", libgit2InitializationTimes);
     }
 
     int shouldExit = 0;
@@ -667,7 +662,7 @@ backup_config_end:
             char *notesDirectoryString = getDirectoryFromVault(vaultSelected, vaultsArray, vaultsCount, vaultsCountForEachDirectory, directoriesArray, numDirectories, shouldDebug);
 
             if (gitEnabled) { // we check if we need to git init the vault each time we enter it
-                  ensureGitDirectory(notesDirectoryString, vaultSelected, gitSignatureName, gitSignatureEmail, shouldDebug);
+                ensureGitDirectory(notesDirectoryString, vaultSelected, gitSignatureName, gitSignatureEmail, shouldDebug);
             }
 
             while (!shouldExit && !shouldChangeVault) {
@@ -773,12 +768,12 @@ backup_config_end:
                     }
                     openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
                     if (gitEnabled) { // After closing a file, we need to update the git repo (if git is enable
-                      char *date = getDateAndTime();
-                      char *commitMsg = malloc(29);
-                      snprintf(commitMsg, 29, "Update - %s", date);
-                      gitBackupUpdate(notesDirectoryString, vaultSelected, gitSignatureName, gitSignatureEmail, commitMsg, shouldDebug);
-                      free(date);
-                      free(commitMsg);
+                        char *date = getDateAndTime();
+                        char *commitMsg = malloc(29);
+                        snprintf(commitMsg, 29, "Update - %s", date);
+                        gitBackupUpdate(notesDirectoryString, vaultSelected, gitSignatureName, gitSignatureEmail, commitMsg, shouldDebug);
+                        free(date);
+                        free(commitMsg);
                     }
                     free(fullPath);
                 } else if (strcmp(noteSelected, "Create new note") == 0) {
