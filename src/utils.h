@@ -17,6 +17,8 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#include <git2.h>
+
 #ifndef VERSION
 #define VERSION "dev"
 #endif
@@ -85,4 +87,12 @@ will be added in the function.
 backupMessage will be set to 1 if a backup was launched.*/
 void handleBackups(char **sourceDirectoryArray, const int sourceDirectoryNumber, char **destinationDirectoryArray, const char *homeDir, const int interval, const char **rsyncArgs, const int rsyncArgsNumber,
                    const int forceBackup, int *backupMessage, const int shouldDebug);
+/*Equivalent of git init.
+If the directory wasn't git initialized. We do it.*/
+void ensureGitDirectory(const char *path, const char *vault, const char *signatureName, const char *signatureEmail, const int shouldDebug);
+/*Configures git, stages everything, commits everything*/
+void gitBackupUpdate(const char *path, const char *vault, const char *signatureName, const char *signatureEmail, const char *commitMsg, const int shouldDebug);
+// yyyy-mm-dd hh:mm:ss
+// Don't forget to free the pointer.
+char *getDateAndTime();
 #endif

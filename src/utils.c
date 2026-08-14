@@ -113,6 +113,185 @@ static void ensureDir(const char *path, const int shouldDebug) {
     }
 }
 
+void ensureGitDirectory(const char *path, const char *vault, const char *signatureName, const char *signatureEmail, const int shouldDebug) {
+  git_repository *repo = NULL;
+  char *fullPath = malloc(PATH_MAX);
+  snprintf(fullPath, PATH_MAX, "%s/%s", path, vault);
+
+  int git_repo_error_code = git_repository_open(&repo, fullPath);
+  if (git_repo_error_code) { // error (most probably that the git repo wasn't initialized)
+    int git_init_error_code = git_repository_init(&repo, fullPath, 0); // the 0 indicates that the directory isn't bare. See https://libgit2.org/docs/reference/main/repository/git_repository_init.html
+    error(git_init_error_code, "program", "git initialization didn't worked. Error code : %d\nSee https://libgit2.org/docs/reference/main/repository/git_repository_init.html for documentation\n\n%s", git_init_error_code, git_error_last()->message);
+    debug("git repo %s was initialized.", fullPath);
+    
+    // we need to setup the .gitignore
+    char *gitignorePath = malloc(PATH_MAX);
+    snprintf(gitignorePath, PATH_MAX, "%s/.gitignore", fullPath);
+    FILE *gitignore = fopen(gitignorePath, "a");
+    error(gitignore == NULL, "program", "failed to open/create %s\n%s", gitignorePath, git_error_last()->message);
+    fputs("*\n", gitignore);
+    fputs("!*/\n", gitignore);
+    fputs("!*.md\n", gitignore);
+    fclose(gitignore);
+    debug("Succesfully wrote .gitignore to %s", gitignorePath);
+    git_repository_free(repo); // we free to be able to open it in gitBackupUpdate()
+    char *date = getDateAndTime();
+    char *commitMsg = malloc(37);
+    snprintf(commitMsg, 37, "Initial commit - %s", date);
+    gitBackupUpdate(path, vault, signatureName, signatureEmail, commitMsg, shouldDebug);
+    free(date);
+    free(commitMsg);
+  } else { // the git repo already exists
+    debug("%s is already a git repo. Skipping initialization...", fullPath);
+    git_repository_free(repo);
+  }
+
+  free(fullPath);
+}
+
+void gitBackupUpdate(const char *path, const char *vault, const char *signatureName, const char *signatureEmail, const char *commitMsg, const int shouldDebug) {
+    git_repository *repo = NULL;
+    git_index *index = NULL;
+    git_tree *tree = NULL;
+    git_tree *head_tree = NULL;
+    git_commit *head_commit = NULL;
+    git_signature *signature = NULL;
+    git_diff *diff = NULL;
+
+    git_oid tree_id;
+    git_oid commit_id;
+
+    char *fullPath = malloc(PATH_MAX);
+    
+    error(fullPath == NULL, "program", "Failed to allocate path");
+
+    snprintf(fullPath, PATH_MAX, "%s/%s", path, vault);
+
+    /* Open repository */
+    int return_code = git_repository_open(&repo, fullPath);
+
+    error(return_code, "program", "Failed to open Git repository\n%s", git_error_last()->message);
+
+    /* Get the index */
+    return_code = git_repository_index(&index, repo);
+    error(return_code, "program", "Failed to get Git index\n%s", git_error_last()->message);
+
+    /* git add . */
+    return_code = git_index_add_all(index, NULL, 0, NULL, NULL);
+    error(return_code, "program", "Failed to add files\n%s", git_error_last()->message);
+
+    return_code = git_index_write(index);
+    error(return_code, "program", "Failed to write index\n%s", git_error_last()->message);
+
+    /*
+     * Check whether there are changes to commit.
+     *
+     * For a new repository there is no HEAD yet, so the index
+     * itself tells us whether there is anything to commit.
+     */
+    int has_changes = 0;
+
+    if (git_repository_head_unborn(repo)) {
+        has_changes = git_index_entrycount(index) > 0;
+    } else {
+        git_oid head_oid;
+
+        return_code = git_reference_name_to_id(
+            &head_oid,
+            repo,
+            "HEAD"
+        );
+        error(return_code, "program", "Failed to get HEAD\n%s", git_error_last()->message);
+
+        return_code = git_commit_lookup(
+            &head_commit,
+            repo,
+            &head_oid
+        );
+        error(return_code, "program", "Failed to lookup HEAD commit\n%s", git_error_last()->message);
+
+        return_code = git_commit_tree(
+            &head_tree,
+            head_commit
+        );
+        error(return_code, "program", "Failed to get HEAD tree\n%s", git_error_last()->message);
+
+        return_code = git_diff_tree_to_index(
+            &diff,
+            repo,
+            head_tree,
+            index,
+            NULL
+        );
+
+        error(return_code, "program", "Failed to create diff\n%s", git_error_last()->message);
+
+        has_changes = git_diff_num_deltas(diff) > 0;
+    }
+
+    /* Nothing changed, so don't create a commit */
+    if (!has_changes) {
+        debug("No changes to commit in %s", fullPath);
+        goto cleanup;
+    }
+
+    /* index → tree */
+    return_code = git_index_write_tree(&tree_id, index);
+    error(return_code, "program", "Failed to write tree\n%s", git_error_last()->message);
+
+    return_code = git_tree_lookup(&tree, repo, &tree_id);
+    error(return_code, "program", "Failed to lookup tree\n%s", git_error_last()->message);
+
+    /* Author/committer */
+    return_code = git_signature_now(
+        &signature,
+        signatureName,
+        signatureEmail
+    );
+    error(return_code, "program", "Failed to create signature\n%s", git_error_last()->message);
+
+    /* Create commit */
+    if (git_repository_head_unborn(repo)) {
+        return_code = git_commit_create_v(
+            &commit_id,
+            repo,
+            "HEAD",
+            signature,
+            signature,
+            NULL,
+            commitMsg,
+            tree,
+            0
+        );
+    } else {
+        return_code = git_commit_create_v(
+            &commit_id,
+            repo,
+            "HEAD",
+            signature,
+            signature,
+            NULL,
+            commitMsg,
+            tree,
+            1,
+            head_commit
+        );
+    }
+    error(return_code, "program", "Failed to create commit\n%s", git_error_last()->message);
+
+    debug("Created commit %s in %s", commitMsg, fullPath);
+
+cleanup:
+    git_diff_free(diff);
+    git_signature_free(signature);
+    git_tree_free(tree);
+    git_tree_free(head_tree);
+    git_commit_free(head_commit);
+    git_index_free(index);
+    git_repository_free(repo);
+    free(fullPath);
+}
+
 void initAppFilesAndDirs(const char *home, const int shouldDebug) {
     // sometimes .cache and .config doesn't exist. Such as with github actions machines
     char config_dir[PATH_MAX];
@@ -157,13 +336,28 @@ void initAppFilesAndDirs(const char *home, const int shouldDebug) {
             "    \"enable\": false,\n"
             "    \"directory\": {\n"
             "       \"~/Documents/\": \"path/to/backup/\"\n"
-            "      },\n"
+            "    },\n"
             "    \"interval\": \"weekly\",\n"
-            "    \"rsyncArgs\": [\"-Lqah\", \"--update\"]\n"
+            "    \"rsyncArgs\": [\"-Lqah\", \"--update\"],\n"
+            "    \"git\": {\n"
+            "      \"enable\": false,\n"
+            "      \"email\": \"mail@example.com\",\n"
+            "      \"name\": \"Example Example\"\n"
+            "    }\n"
             "  }\n"
             "}\n");
 
     fclose(w);
+}
+
+char *getDateAndTime() {
+  char *return_value = malloc(20);
+  time_t now = time(NULL);
+  struct tm tm_now;
+  localtime_r(&now, &tm_now);
+
+  strftime(return_value, sizeof(return_value), "%Y-%m-%%d %H:%M:%%S", &tm_now);
+  return return_value;
 }
 
 void handleBackups(char **sourceDirectoryArray, const int sourceNumber, char **destinationDirectoryArray, const char *homeDir, const int interval, const char **rsyncArguments, const int rsyncArgumentsNumber,
