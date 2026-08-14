@@ -28,6 +28,7 @@ jobs:
           pkg-config \
           libcjson-dev \
           libncurses-dev \
+          libgit2-dev \
           git \
           neovim
     - name: Prepare environnement
