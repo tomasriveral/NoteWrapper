@@ -41,6 +41,7 @@ Before building NoteWrapper, you must install the following dependencies:
 * `sed`
 * `ripgrep`
 * `fzf`
+* `libgit2`
 
 You must also have a [supported editor (and their associated plugin if needed)](#editor-support) installed:
 
@@ -200,7 +201,12 @@ Edit `~/.config/notewrapper/config.json`. If it does not exist, it will be creat
         "/other/paths/": "path/to/backup2"
     },
     "interval": "weekly",
-    "rsyncArgs": ["-Lqah", "--update"]
+    "rsyncArgs": ["-Lqah", "--update"],
+    "git": {
+        "enable": false,
+        "name": "Example Example",
+        "email": "mail@example.com"
+    }
   }
 }
 ```
@@ -218,6 +224,8 @@ Edit `~/.config/notewrapper/config.json`. If it does not exist, it will be creat
 * `backup.directory`: backup's destination for each directory
 * `backup.interval`: backup frequency (`daily`, `weekly`, `monthly`, or integer)
 * `backup.rsyncArgs`: arguments passed to `rsync`
+* `git.enable`: enable git version control for backups
+* `git.name` and `git.email` are for the commits signature
 
 Note: 
 * Directories must end with `/`.
@@ -228,6 +236,8 @@ Note:
 * `journalRegex` must match if the file name ends with `.md` and if it doesn't.
 * It is recommended to keep `-q` or `--quiet` flag in `rsyncArgs` to avoid interference with `ncurses`.
 * If `rsync` fails, you will see it inside `ncurses`.
+* If you want the git backup but without rsync, you can leave `backup.directory` empty or map each directory to itself. When enabled, git will apply to all your vaults.
+* Each vault gets its own git repository that will be created the first time you select the vault with the option enabled.
 
 ---
 
