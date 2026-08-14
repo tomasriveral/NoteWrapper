@@ -30,6 +30,7 @@
             ripgrep
             fzf
             gnused
+            libgit2
           ];
 
           buildPhase = ''
@@ -51,6 +52,7 @@
             valgrind
             clang-tools
             gnumake
+            libgit2
           ];
         };
 

@@ -4,9 +4,9 @@ VERSION := $(shell git describe --tags --always --dirty)
 
 CFLAGS := -Wall -Wextra -Werror -O2 \
 		  -DVERSION=\"$(VERSION)\" \
-	      $(shell pkg-config --cflags libcjson ncurses)
+	      $(shell pkg-config --cflags libcjson ncurses libgit2)
 
-LDFLAGS := $(shell pkg-config --libs libcjson ncurses)
+LDFLAGS := $(shell pkg-config --libs libcjson ncurses libgit2)
 
 SRC := src/main.c src/ui.c src/utils.c src/notes.c
 TARGET := notewrapper

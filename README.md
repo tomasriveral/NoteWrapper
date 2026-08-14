@@ -41,6 +41,7 @@ Before building NoteWrapper, you must install the following dependencies:
 * `sed`
 * `ripgrep`
 * `fzf`
+* `libgit2`
 
 You must also have a [supported editor (and their associated plugin if needed)](#editor-support) installed:
 
@@ -157,11 +158,13 @@ NoteWrapper relies on certain editor features, so not all functionality is suppo
 
 ### Features requiring editor support:
 
-* **Bufferless rendering**: updates the rendered view while typing (without saving)
-* **Cursor following**: rendered view follows the cursor position
-* **Jump to end on open**: automatically moves the cursor to the end of the file
+* **Bufferless rendering**: updates the rendered view while typing (without saving). You won't need to save the file to see it updated in your browser.
+* **Cursor following**: rendered view follows the cursor position. When you scroll in your editor, it will automatically scroll your browser view.
+* **Jump to end on open**: automatically moves the cursor to the end of the file when oppening.
 
-The first two features depend on [Vivify's editor integration](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#existing-integration) and are mainly useful if you want external Markdown rendering in your browser.
+The first two features depend on [Vivify's editor integration](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#existing-integration)[^1] and are mainly useful if you want external Markdown rendering in your browser.
+
+[^1]: Eventhough the features are Vivify-related, please report bugs and ask questions in this repo.
 
 If your editor does not support these features, you can implement a plugin using [Vivify's API](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#editor-support).
 
@@ -200,7 +203,12 @@ Edit `~/.config/notewrapper/config.json`. If it does not exist, it will be creat
         "/other/paths/": "path/to/backup2"
     },
     "interval": "weekly",
-    "rsyncArgs": ["-Lqah", "--update"]
+    "rsyncArgs": ["-Lqah", "--update"],
+    "git": {
+        "enable": false,
+        "name": "Example Example",
+        "email": "mail@example.com"
+    }
   }
 }
 ```
@@ -218,6 +226,8 @@ Edit `~/.config/notewrapper/config.json`. If it does not exist, it will be creat
 * `backup.directory`: backup's destination for each directory
 * `backup.interval`: backup frequency (`daily`, `weekly`, `monthly`, or integer)
 * `backup.rsyncArgs`: arguments passed to `rsync`
+* `git.enable`: enable git version control for backups
+* `git.name` and `git.email` are for the commits signature
 
 Note: 
 * Directories must end with `/`.
@@ -228,6 +238,8 @@ Note:
 * `journalRegex` must match if the file name ends with `.md` and if it doesn't.
 * It is recommended to keep `-q` or `--quiet` flag in `rsyncArgs` to avoid interference with `ncurses`.
 * If `rsync` fails, you will see it inside `ncurses`.
+* If you want the git backup but without rsync, you can leave `backup.directory` empty or map each directory to itself. When enabled, git will apply to all your vaults.
+* Each vault gets its own git repository that will be created the first time you select the vault with the option enabled.
 
 ---
 
