@@ -158,11 +158,13 @@ NoteWrapper relies on certain editor features, so not all functionality is suppo
 
 ### Features requiring editor support:
 
-* **Bufferless rendering**: updates the rendered view while typing (without saving)
-* **Cursor following**: rendered view follows the cursor position
-* **Jump to end on open**: automatically moves the cursor to the end of the file
+* **Bufferless rendering**: updates the rendered view while typing (without saving). You won't need to save the file to see it updated in your browser.
+* **Cursor following**: rendered view follows the cursor position. When you scroll in your editor, it will automatically scroll your browser view.
+* **Jump to end on open**: automatically moves the cursor to the end of the file when oppening.
 
-The first two features depend on [Vivify's editor integration](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#existing-integration) and are mainly useful if you want external Markdown rendering in your browser.
+The first two features depend on [Vivify's editor integration](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#existing-integration)[^1] and are mainly useful if you want external Markdown rendering in your browser.
+
+[^1]: Eventhough the features are Vivify-related, please report bugs and ask questions in this repo.
 
 If your editor does not support these features, you can implement a plugin using [Vivify's API](https://github.com/jannis-baum/Vivify?tab=readme-ov-file#editor-support).
 
