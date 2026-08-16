@@ -766,7 +766,7 @@ backup_config_end:
                         openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
                         free(fullPath);
                     }
-                    openEditor(fullPath, editorToOpen, shouldRender, shouldJumpToEnd, shouldDebug);
+                    free(returnNoteSelection);
                     if (gitEnabled) { // After closing a file, we need to update the git repo (if git is enable
                         char *date = getDateAndTime();
                         char *commitMsg = malloc(29);
@@ -775,7 +775,6 @@ backup_config_end:
                         free(date);
                         free(commitMsg);
                     }
-                    free(fullPath);
                 } else if (strcmp(noteSelected, "Create new note") == 0) {
                 note_creation:
                     noteSelected = createNewNote(notesDirectoryString, vaultSelected, bypassSelectionNote, bypassSelectionNoteValue, journalRegex, shouldDebug);
