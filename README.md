@@ -4,6 +4,8 @@ Note: This project fullfills all my usecases for now, so my main source for feat
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tomasriveral/notewrapper)
 
+![demo.gif](demo.gif)
+
 ## Why?
 
 I started journaling and note-taking with **[Obsidian](https://obsidian.md/)** but wanted to use only free software. I also tried **[Logseq](https://logseq.com/)** and **[Joplin](https://github.com/laurent22/joplin)**, but I preferred a terminal-based workflow.
@@ -229,17 +231,18 @@ Edit `~/.config/notewrapper/config.json`. If it does not exist, it will be creat
 * `git.enable`: enable git version control for backups
 * `git.name` and `git.email` are for the commits signature
 
-Note: 
-* Directories must end with `/`.
-* All directories used must exist.
-* Elements of `directory` and `backup.directory` must match exactly.  
-* Directories set in `directory` but not in `backup.directory` won't be backed up.
-* Directories set in `backup.directory` but not in `directory` will be ignored.
-* `journalRegex` must match if the file name ends with `.md` and if it doesn't.
-* It is recommended to keep `-q` or `--quiet` flag in `rsyncArgs` to avoid interference with `ncurses`.
-* If `rsync` fails, you will see it inside `ncurses`.
-* If you want the git backup but without rsync, you can leave `backup.directory` empty or map each directory to itself. When enabled, git will apply to all your vaults.
-* Each vault gets its own git repository that will be created the first time you select the vault with the option enabled.
+> [!NOTE]
+> * The git backup implementation relies a lot on the IO speed of your drive. A low speed one (or a web mounted one) could create blanks between closing a document and the TUI opening.
+> * Directories must end with `/`.
+> * All directories used must exist.
+> * Elements of `directory` and `backup.directory` must match exactly.  
+> * Directories set in `directory` but not in `backup.directory` won't be backed up.
+> * Directories set in `backup.directory` but not in `directory` will be ignored.
+> * `journalRegex` must match if the file name ends with `.md` and if it doesn't.
+> * It is recommended to keep `-q` or `--quiet` flag in `rsyncArgs` to avoid interference with `ncurses`.
+> * If `rsync` fails, you will see it inside `ncurses`.
+> * If you want the git backup but without rsync, you can leave `backup.directory` empty or map each directory to itself. When enabled, git will apply to all your vaults.
+> * Each vault gets its own git repository that will be created the first time you select the vault with the option enabled.
 
 ---
 
