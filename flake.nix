@@ -53,6 +53,7 @@
             clang-tools
             gnumake
             libgit2
+            vhs
           ];
         };
 
