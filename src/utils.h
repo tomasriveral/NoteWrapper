@@ -31,6 +31,7 @@
 #define debug(message, ...) _debug(shouldDebug, __FILE__, __LINE__, __func__, message, ##__VA_ARGS__)
 #define altDebug(message, ...) _altDebug(shouldDebug, message, ##__VA_ARGS__)
 #define error(condition, type, message, ...) _error(shouldDebug, condition, type, __FILE__, __LINE__, __func__, message, ##__VA_ARGS__)
+#define warn(condition, message, ...) _warn(condition, __FILE__, __LINE__, __func__, message, ##__VA_ARGS__)
 // you must edit this two values if you want to add suport for an editor
 extern const char *supportedEditor[]; // array of supported editors
 extern const int numEditors;          // number of supported editors
@@ -53,6 +54,8 @@ void _debug(const int d, const char *file, const int line, const char *function,
 void _altDebug(const int d, const char *message, ...);
 // formated error.
 void _error(const int shouldDebug, const int condition, const char *type, const char *file, const int line, const char *function, const char *message, ...);
+// formated warn
+void _warn(const int condition, const char *file, const int line, const char *function, const char *message, ...);
 // Returns 1 if the string is in the array.
 // Returns 0 if the string is not in the array.
 // If you want to only check the first n elements of the array, pass n as len.
