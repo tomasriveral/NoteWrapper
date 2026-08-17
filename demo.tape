@@ -36,8 +36,6 @@ Sleep 500ms
 Down
 Sleep 500ms
 Down
-Sleep 500ms
-Down
 Sleep 700ms
 
 Enter
@@ -109,12 +107,12 @@ Sleep 1500ms
 Type "Don't worry: NoteWrapper also works with basic notes."
 Sleep 800ms
 
-Type "It distinguishes them using a regular expression, which defaults to `.*journal.*`."
+Type " It distinguishes them using a regular expression, which defaults to `.*journal.*`."
 Sleep 800ms
 Enter
 Sleep 700ms
 
-Type "The unified or divided journal mode is chosen when you first create the journal."
+Type " The unified or divided journal mode is chosen when you first create the journal."
 Sleep 1000ms
 Enter
 Sleep 1500ms
@@ -126,7 +124,7 @@ Sleep 1500ms
 Type "Let me show you one last cool feature."
 Sleep 1000ms
 
-Type "Have you ever forgotten when or where you wrote something?"
+Type " Have you ever forgotten when or where you wrote something?"
 Sleep 1000ms
 Enter
 Sleep 800ms
@@ -172,7 +170,7 @@ Sleep 1500ms
 
 # Show the search result / preview
 Up
-Sleep 5000ms
+Sleep 2000ms
 Enter
 Sleep 1000ms
 
