@@ -315,7 +315,7 @@ char *getDateAndTime() {
     struct tm tm_now;
     localtime_r(&now, &tm_now);
 
-    strftime(return_value, sizeof(return_value), "%Y-%m-%%d %H:%M:%%S", &tm_now);
+    strftime(return_value, 20, "%Y-%m-%d %H:%M:%S", &tm_now);
     return return_value;
 }
 
