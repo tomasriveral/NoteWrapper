@@ -10,7 +10,7 @@ This project aims to remain minimal, terminal-focused, and easy to extend. Contr
 
 Please use the standardized debugging and error-handling functions defined in [/src/utils.c](./src/utils.c):
 
-* `debug(...)`
+* `debug("message", ...)`
   Used for formatted debugging output (printf-style formatting).
 
 * `altDebug(...)`
@@ -21,6 +21,8 @@ Please use the standardized debugging and error-handling functions defined in [/
 
   * `"user"`: errors caused by user input or configuration
   * `"program"`: internal or unexpected program errors
+* `warn(condition, "message", ...)`
+  Used for formatted warning (printf-style formatting).
 
 ---
 

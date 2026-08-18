@@ -71,6 +71,26 @@ void _error(const int shouldDebug, const int condition, const char *type, const 
         exit(1);
     }
 }
+void _warn(const int condition, const char *file, const int line, const char *function, const char *message, ...) { // use for warnings that should always be shown
+    if (condition) {
+        fflush(stdout);
+        fflush(stderr);
+
+        va_list args;
+        va_start(args, message);
+
+        int h, m, s;
+        getCurrentTime(&h, &m, &s);
+
+        fprintf(stdout, "\e[0;33m[WARNING -- %d:%d:%d] From file %s line %d function %s:\e[0m\n", h, m, s, file, line, function);
+
+        vfprintf(stdout, message, args);
+
+        fprintf(stdout, "\e[0m\n");
+
+        va_end(args);
+    }
+}
 
 static void copyDir(const char *source, const char *destination, const char **rsyncArgs, const int rsyncArgsNumber, const int shouldDebug) {
     debug("Backuping... source: %s and destination: %s", source, destination);
@@ -113,6 +133,20 @@ static void ensureDir(const char *path, const int shouldDebug) {
     }
 }
 
+static void slowGitWarning(struct timespec start, int *wasShown) {
+    if (!*wasShown) {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+
+        double elapsed = (double)(now.tv_sec - start.tv_sec) + (double)(now.tv_nsec - start.tv_nsec) / 1e9;
+
+        warn(elapsed > 0.3, "Git operations are taking too much time. You drive might be slow. Please do not stop the program.");
+        if (elapsed > 0.3) {
+            *wasShown = 1;
+        }
+    }
+}
+
 void ensureGitDirectory(const char *path, const char *vault, const char *signatureName, const char *signatureEmail, const int shouldDebug) {
     git_repository *repo = NULL;
     char *fullPath = malloc(PATH_MAX);
@@ -151,6 +185,10 @@ void ensureGitDirectory(const char *path, const char *vault, const char *signatu
 }
 
 void gitBackupUpdate(const char *path, const char *vault, const char *signatureName, const char *signatureEmail, const char *commitMsg, const int shouldDebug) {
+    // on slow drive or WebDav mounted drive this git operations are pretty slow. We'll just show a warning to avoid the user closing the program.
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     git_repository *repo = NULL;
     git_index *index = NULL;
     git_tree *tree = NULL;
@@ -162,6 +200,8 @@ void gitBackupUpdate(const char *path, const char *vault, const char *signatureN
     git_oid tree_id;
     git_oid commit_id;
 
+    int slowGitWarningAlreadyShown = 0;
+
     char *fullPath = malloc(PATH_MAX);
 
     error(fullPath == NULL, "program", "Failed to allocate path");
@@ -172,17 +212,21 @@ void gitBackupUpdate(const char *path, const char *vault, const char *signatureN
     int return_code = git_repository_open(&repo, fullPath);
 
     error(return_code, "program", "Failed to open Git repository\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     /* Get the index */
     return_code = git_repository_index(&index, repo);
     error(return_code, "program", "Failed to get Git index\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     /* git add . */
     return_code = git_index_add_all(index, NULL, 0, NULL, NULL);
     error(return_code, "program", "Failed to add files\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     return_code = git_index_write(index);
     error(return_code, "program", "Failed to write index\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     /*
      * Check whether there are changes to commit.
@@ -199,16 +243,19 @@ void gitBackupUpdate(const char *path, const char *vault, const char *signatureN
 
         return_code = git_reference_name_to_id(&head_oid, repo, "HEAD");
         error(return_code, "program", "Failed to get HEAD\n%s", git_error_last()->message);
+        slowGitWarning(start, &slowGitWarningAlreadyShown);
 
         return_code = git_commit_lookup(&head_commit, repo, &head_oid);
         error(return_code, "program", "Failed to lookup HEAD commit\n%s", git_error_last()->message);
+        slowGitWarning(start, &slowGitWarningAlreadyShown);
 
         return_code = git_commit_tree(&head_tree, head_commit);
         error(return_code, "program", "Failed to get HEAD tree\n%s", git_error_last()->message);
+        slowGitWarning(start, &slowGitWarningAlreadyShown);
 
         return_code = git_diff_tree_to_index(&diff, repo, head_tree, index, NULL);
-
         error(return_code, "program", "Failed to create diff\n%s", git_error_last()->message);
+        slowGitWarning(start, &slowGitWarningAlreadyShown);
 
         has_changes = git_diff_num_deltas(diff) > 0;
     }
@@ -222,13 +269,16 @@ void gitBackupUpdate(const char *path, const char *vault, const char *signatureN
     /* index → tree */
     return_code = git_index_write_tree(&tree_id, index);
     error(return_code, "program", "Failed to write tree\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     return_code = git_tree_lookup(&tree, repo, &tree_id);
     error(return_code, "program", "Failed to lookup tree\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     /* Author/committer */
     return_code = git_signature_now(&signature, signatureName, signatureEmail);
     error(return_code, "program", "Failed to create signature\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     /* Create commit */
     if (git_repository_head_unborn(repo)) {
@@ -237,6 +287,7 @@ void gitBackupUpdate(const char *path, const char *vault, const char *signatureN
         return_code = git_commit_create_v(&commit_id, repo, "HEAD", signature, signature, NULL, commitMsg, tree, 1, head_commit);
     }
     error(return_code, "program", "Failed to create commit\n%s", git_error_last()->message);
+    slowGitWarning(start, &slowGitWarningAlreadyShown);
 
     debug("Created commit %s in %s", commitMsg, fullPath);
 
@@ -315,7 +366,7 @@ char *getDateAndTime() {
     struct tm tm_now;
     localtime_r(&now, &tm_now);
 
-    strftime(return_value, sizeof(return_value), "%Y-%m-%%d %H:%M:%%S", &tm_now);
+    strftime(return_value, 20, "%Y-%m-%d %H:%M:%S", &tm_now);
     return return_value;
 }
 
